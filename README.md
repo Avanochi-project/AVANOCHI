@@ -14,4 +14,3 @@ Choose your preferred language above to explore the project details.
 <p align="center">
   <img src="assets/avanochi/animated/avanochi_greet.gif" alt="Avanochi Greeting" />
 </p>
----
