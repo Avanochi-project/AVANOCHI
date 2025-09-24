@@ -17,6 +17,34 @@ Aplicación de `productividad` con un enfoque lúdico, diseñada para mejorar la
     - `Ajuste dinámico del horario` en base al rendimiento histórico.
     - `Voice assistant` para poder interactuar con el como si fuera un compañero mas
 
+- Avanochi multicanal (Bot Service + Speech Services)
+    - Interacción por `voz y chat` con Avanochi.  
+    - Integración en `Teams/Slack` como compañero virtual.  
+    - Envío de `recordatorios hablados` y respuestas naturales.  
+
+- Generación de informes narrativos (Azure OpenAI / AI Foundry)
+    - Creación de `resúmenes semanales` en lenguaje natural.  
+    - Explicación de `rendimiento, descansos y hábitos` de forma personalizada.  
+    - Ejemplo: “Esta semana trabajaste un 15% más rápido en tareas creativas, pero descuidaste los descansos de media tarde…”  
+
+- Logros y recompensas (Functions + Cosmos DB)
+    - Sistema de `trofeos y logros` por constancia y hábitos saludables.  
+    - Ejemplo: “7 días hidratado”, “0 horas extra en la semana”.  
+    - Refuerzo de la `motivación y el bienestar` del usuario.  
+
+- Mapas de calor de productividad (Cosmos DB + Power BI)
+    - Visualización de `estadísticas de productividad` en distintas horas del día.  
+    - Identificación de `momentos de máximo rendimiento`.  
+    - Ayuda en la `planificación óptima` de la jornada laboral.  
+
+- Predicciones de sobrecarga (Azure Machine Learning + Functions)
+    - Modelo de IA para `anticipar sobrecargas laborales`.  
+    - Generación de `alertas preventivas` si se prevé trabajar más de 9h.  
+    - Prevención de `estrés y exceso de horas`.  
+
+![alt text](assets/image.png)
+
+## 3. Features
 - Estadísticas de rendimiento
     - `Horas trabajadas` diarias y semanales.
     - `Tareas completadas vs pendientes` por cada jornada.
@@ -27,9 +55,8 @@ Aplicación de `productividad` con un enfoque lúdico, diseñada para mejorar la
     - `Hora de comer`: Avanochi necesita comer. Si no le das de comer, asume que tú tampoco lo has hecho y te recuerda parar para almorzar.
     - `Hidratación`: Avanochi tiene sed periódicamente. Cuando le das agua, entiendes que también debes hidratarte.
 
-![alt text](assets/image.png)
 
-## 3. Caso de uso
+## 4. Caso de uso
 1. El empleado inicia sesión en Avanochi al `comenzar su jornada`.
 2. Si es lunes, se cargan las tareas pendientes de la semana anterior o se generan nuevas.
 3. Durante el día:
@@ -41,7 +68,7 @@ Aplicación de `productividad` con un enfoque lúdico, diseñada para mejorar la
     - Se generan `estadísticas de rendimiento`.
     - Se preparan `recomendaciones para el día siguiente`.
 
-## 4. Aprendizaje continuo
+## 5. Aprendizaje continuo
 El modelo de IA `analiza el historial de trabajo del empleado` y ajusta las recomendaciones con el tiempo, personalizando horarios y estrategias para `optimizar la productividad`.
 
 Las métricas para evaluar la productividad serían las siguientes:
