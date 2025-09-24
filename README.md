@@ -95,7 +95,7 @@ Las métricas para evaluar la productividad serían las siguientes:
 | Tiempo de respuesta al feedback de Avanochi | Medir la efectividad de las recomendaciones dadas.                       |
 | Frecuencia de interacciones con Avanochi  | Evaluar adopción y uso del sistema por parte del empleado.                |
 
-## Roadmap por Fases - Proyecto Avanochi
+## 6. Roadmap por Fases - Proyecto Avanochi
 
 ### Fase 1: MVP (Producto Mínimo Viable)
 **Objetivo:** Validar la idea con un prototipo funcional y simple.  
