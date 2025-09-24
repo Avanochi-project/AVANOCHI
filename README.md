@@ -1,7 +1,9 @@
 # AVANOCHI
 Aplicación de `productividad` con un enfoque lúdico, diseñada para mejorar la `gestión del tiempo` y el `rendimiento` durante la jornada laboral. Avanochi funciona como un “tamagochi” productivo, que motiva al empleado mientras organiza sus tareas, mide su rendimiento y promueve hábitos saludables.
 
-![alt text](assets/avanochi/animated/avanochi_greet.gif)
+<p align="center">
+  <img src="assets/avanochi/animated/avanochi_greet.gif" alt="Avanochi Greeting" />
+</p>
 
 ## 1. Objetivos
 - `Incrementar la productividad` y organización personal.
