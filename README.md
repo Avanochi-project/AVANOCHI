@@ -1,3 +1,5 @@
+
+
 # AVANOCHI
 Aplicación de `productividad` con un enfoque lúdico, diseñada para mejorar la `gestión del tiempo` y el `rendimiento` durante la jornada laboral. Avanochi funciona como un “tamagochi” productivo, que motiva al empleado mientras organiza sus tareas, mide su rendimiento y promueve hábitos saludables.
 
@@ -92,3 +94,91 @@ Las métricas para evaluar la productividad serían las siguientes:
 | Tareas reprogramadas o arrastradas        | Identificar retrasos o dificultades recurrentes.                          |
 | Tiempo de respuesta al feedback de Avanochi | Medir la efectividad de las recomendaciones dadas.                       |
 | Frecuencia de interacciones con Avanochi  | Evaluar adopción y uso del sistema por parte del empleado.                |
+
+## Roadmap por Fases - Proyecto Avanochi
+
+### Fase 1: MVP (Producto Mínimo Viable)
+**Objetivo:** Validar la idea con un prototipo funcional y simple.  
+**Alcance:**
+- Gestión básica de tareas (crear, consultar, completar).
+- Registro de horas de inicio y fin de jornada.
+- Estadísticas iniciales: horas trabajadas y tareas completadas.
+- Versión simple de Avanochi (interfaz visual básica tipo tamagochi).
+- Base de datos inicial en **Cosmos DB** para persistencia.
+
+**Entregable:** Una aplicación sencilla que muestre a Avanochi reaccionando al progreso del usuario y con métricas básicas.
+
+---
+
+### Fase 2: Productividad + Gamificación
+**Objetivo:** Aumentar el engagement y la utilidad de la app.  
+**Alcance:**
+- Registro automático de tiempos en tareas.
+- Control manual de descansos (ej. marcar “descanso iniciado”).
+- Logros y recompensas básicos (ej. tareas completadas en un día, cumplir con pausas).
+- Notificaciones simples (recordatorios por hora o por tarea).
+- Dashboards básicos con **Power BI** (tareas completadas, horas trabajadas).
+
+**Entregable:** Una app gamificada con primeros elementos de motivación y métricas visuales.
+
+---
+
+### Fase 3: Inteligencia y Recomendaciones
+**Objetivo:** Integrar IA para personalización.  
+**Alcance:**
+- Análisis de hábitos laborales (Azure AI / AI Foundry).
+- Recomendaciones básicas: cuándo tomar descansos, priorizar tareas.
+- Resúmenes diarios y semanales en lenguaje natural.
+- Ajustes dinámicos en la agenda según desempeño histórico.
+- Identificación de sobrecarga (alerta si supera 8,5h/día).
+
+**Entregable:** Avanochi como asistente inteligente que analiza tu jornada y da consejos personalizados.
+
+---
+
+### Fase 4: Interacción Multicanal
+**Objetivo:** Extender la experiencia más allá de la app.  
+**Alcance:**
+- Integración en **Teams/Slack** como compañero virtual.
+- Soporte de voz mediante **Azure Speech Services**.
+- Avanochi capaz de interactuar en chat o voz de manera natural.
+- Recordatorios hablados y notificaciones en plataformas externas.
+
+**Entregable:** Avanochi disponible como un compañero digital accesible desde múltiples canales.
+
+---
+
+### Fase 5: Bienestar y Salud Laboral
+**Objetivo:** Reforzar la dimensión saludable.  
+**Alcance:**
+- Funciones “Healthy life”: hidratación, comidas, descansos.
+- Avanochi “se cansa” si trabajas demasiado.
+- Logros saludables (ej. “7 días hidratado”).
+- Balance automático trabajo/descanso como métrica clave.
+
+**Entregable:** Una app que combina productividad con bienestar, reforzando hábitos saludables.
+
+---
+
+### Fase 6: Analítica Avanzada y Predicción
+**Objetivo:** Anticipar problemas y optimizar al máximo.  
+**Alcance:**
+- Mapas de calor de productividad por hora/día (Cosmos DB + Power BI).
+- Predicciones de sobrecarga laboral mediante **Azure Machine Learning**.
+- Informes narrativos enriquecidos (ej. “Eres más eficiente en tareas creativas por la mañana”).
+- Ajustes automáticos en la planificación futura.
+
+**Entregable:** Avanochi como copiloto de productividad, con analítica avanzada y capacidades predictivas.
+
+---
+
+### Fase 7: Optimización y Expansión
+**Objetivo:** Escalabilidad y evolución del ecosistema.  
+**Alcance:**
+- Optimización de modelos y experiencia de usuario.
+- Internacionalización (multi-idioma).
+- Integración con calendarios corporativos (Outlook, Google Calendar).
+- API abierta para terceros (plugins, integraciones).
+
+**Entregable:** Plataforma madura y escalable, lista para adopción masiva.
+
