@@ -2,7 +2,7 @@
 Aplicación de `productividad` con un enfoque lúdico, diseñada para mejorar la `gestión del tiempo` y el `rendimiento` durante la jornada laboral. Avanochi funciona como un “tamagochi” productivo, que motiva al empleado mientras organiza sus tareas, mide su rendimiento y promueve hábitos saludables.
 
 <p align="center">
-  <img src="../avanochi/animated/avanochi_greet.gif" alt="Avanochi Greeting" />
+    <img src="../avanochi/animated/avanochi_greet.gif" alt="Avanochi Greeting" width="300"/>
 </p>
 
 ## 1. Objetivos
@@ -98,7 +98,11 @@ Las métricas para evaluar la productividad serían las siguientes:
 | Frecuencia de interacciones con Avanochi  | Evaluar adopción y uso del sistema por parte del empleado.                |
 
 # Roadmap por Fases - Proyecto Avanochi
- 
+
+<p align="center">
+    <img src="../avanochi/animated/avanochi_okay.gif" alt="Avanochi Congrats" width="300"/>
+</p>
+
 ## Fase 1: MVP (Producto Mínimo Viable)
 **Objetivo:** Validar la idea con un prototipo funcional y simple.  
 **Alcance:**

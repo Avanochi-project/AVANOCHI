@@ -2,8 +2,9 @@
 Productivity application with a playful approach, designed to improve `time management` and `performance` during the workday. Avanochi works as a productive "tamagochi", motivating the employee while organizing their tasks, measuring performance, and promoting healthy habits.
 
 <p align="center">
-  <img src="../avanochi/animated/avanochi_greet.gif" alt="Avanochi Greeting" />
+    <img src="../avanochi/animated/avanochi_greet.gif" alt="Avanochi Greeting" width="300"/>
 </p>
+
 
 ## 1. Objectives
 - `Increase productivity` and personal organization.
@@ -98,6 +99,10 @@ The metrics to evaluate productivity would be the following:
 
 # Roadmap by Phases - Avanochi Project
  
+<p align="center">
+    <img src="../avanochi/animated/avanochi_okay.gif" alt="Avanochi Congrats" width="300"/>
+</p>
+
 ## Phase 1: MVP (Minimum Viable Product)
 **Objective:** Validate the idea with a functional and simple prototype.  
 **Scope:**
