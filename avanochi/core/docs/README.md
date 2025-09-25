@@ -7,6 +7,13 @@ this is the official documentation of the [AVANOCHI](https://github.com/Avanochi
 # Table of Contents
 
 - [Introduction](#introduction)
+- [1. General Architecture: Azure serverless service](#1-general-architecture-azure-serverless-service)
+  - [1.1 AZ_functions directory](#11-az_functions-directory)
+    - [Structure Overview](#structure-overview)
+      - [Shared Architecture](#shared-architecture)
+        - [Credential Manager](#credential-manager)
+        - [Database: CosmosDB](#database-cosmosdb)
+
 
 <div class="page-break"></div>
 
