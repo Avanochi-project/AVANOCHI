@@ -1,0 +1,57 @@
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background-color: #d25b01; /* Naranja base */
+  color: white;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 40px;
+  background: #d25b01;
+  border-bottom: 3px solid #b34700;
+  color: #fff7ed;
+  font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+  box-shadow: 0 2px 12px rgba(210,91,1,0.07);
+}
+
+.logo {
+  font-size: 1.4rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: #fff7ed;
+  font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+}
+
+.navbar-right a {
+  margin-left: 20px;
+  text-decoration: none;
+  color: #fff7ed;
+  font-weight: 600;
+  font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+  padding: 7px 16px;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px rgba(210,91,1,0.06);
+}
+.navbar-right a:hover {
+  background: #fff7ed;
+  color: #d25b01;
+  box-shadow: 0 2px 8px rgba(210,91,1,0.10);
+}
+.active {
+  background: #fff7ed;
+  color: #d25b01 !important;
+  border-bottom: 2px solid #f59a25;
+}
