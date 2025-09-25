@@ -1,4 +1,4 @@
-# shared/models.py
+# shared/entities.py
 from datetime import datetime
 import uuid
 
@@ -24,7 +24,6 @@ class WorkSession:
 
     def end_session(self):
         self.end_time = datetime.utcnow().isoformat()
-        # Duración en horas (float)
         start = datetime.fromisoformat(self.start_time)
         end = datetime.fromisoformat(self.end_time)
         self.duration = round((end - start).total_seconds() / 3600, 2)

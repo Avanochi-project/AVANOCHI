@@ -99,3 +99,176 @@ The main working logic can be divided into two main functions:
     ```
 
 ##### Database: CosmosDB
+
+This module is responsible for handling all interactions with Azure Cosmos DB, ensuring that data persistence is managed in a centralized and secure manner.
+The CosmosDBService class abstracts the complexity of creating and maintaining the connection to Cosmos DB, making sure that the required database and container exist before any operation is performed.
+By depending exclusively on the `CredentialManager` to retrieve its credentials, this class adheres to the Single Responsibility Principle, keeping authentication logic separated from database logic. This approach guarantees scalability, maintainability, and consistent usage of environment-based configurations.
+The main responsibilities can be divided into the following components:
+
+- **Initialization (`__init__`)**
+    Upon instantiation, the service retrieves Cosmos DB credentials through the CredentialManager and sets up the database connection.
+    - It creates a `CosmosClient` with the provided URI and primary key.
+    - It ensures the target database exists (or creates it if missing).
+    - It ensures the container exists (or creates it if missing) with a default partition key and throughput configuration.
+
+    ```python
+    def __init__(self, credential_manager: CredentialManager):
+        # Initialize the Cosmos DB client and ensure the database and container exist.
+        
+        creds = credential_manager.get_cosmos_db_credentials()
+        self._url = creds["uri"]
+        self._key = creds["primary_key"]
+        self._database_name = creds["database_name"]
+        self._container_name = creds["container_name"]
+
+        # Create the Cosmos client
+        self._client = CosmosClient(self._url, self._key)
+
+        # Ensure the database exists
+        self._database = self._client.create_database_if_not_exists(id=self._database_name)
+
+        # Ensure the container exists
+        self._container = self._database.create_container_if_not_exists(
+            id=self._container_name,
+            partition_key=PartitionKey(path="/id"),  # Default partition key
+            offer_throughput=400
+        )
+
+    ```
+
+##### Entities
+This module defines the core domain entities of the application. Entities are plain Python classes that represent the business objects of Avanochi, such as **tasks** and **work sessions**.
+They are designed with **Single Responsibility Principle (SRP)** in mind:
+- They only handle their own state and basic transformations.
+- They are not aware of database operations or business orchestration.
+- They provide serialization methods so that higher layers (repositories, services) can persist or transport them as dictionaries/JSON.
+
+To give further examples, **tasks** and **work sessions** will be explained bellow.
+
+- **Entity Tasks**
+    Represents a single task in the system, having the following fields:
+    - `id`: unique identifier (UUID)
+    - `title`: short description of the task
+    - `completed`: boolean status (default `false`)
+    - `created_at`: UTC timestamp of the creation (ISO format)
+    - `updated_at`: timestamp of the last update (optional)
+
+    It contains only one method to return the `task` as a dictionary:
+
+    ```python
+        def to_dict(self):
+            return self.__dict__
+    ```
+
+    The output would be something like this:
+
+    ```json
+    {
+        "id": "3b9f7b8e-6d7a-4e3f-a23c-5a0efb9b72c9",
+        "title": "Finish project report",
+        "completed": false,
+        "created_at": "2025-09-25T10:15:30.123456",
+        "updated_at": null
+    }
+    ```
+
+- **Entity WorkSession**
+    Represents a session of productive work for a given user, having the following fields:
+    - `id`: unique identifier (UUID)
+    - `user_id`: identifier of the user who owns the session
+    - `start_time`: UTC timestamp when the session started (ISO format).
+    - `end_time`: UTC timestamp when the session ended (ISO format).
+    - `duration`: session length in hours, stored as a float (rounded to 2 decimals).
+
+    It contain two methods:
+    - `end_session()`: sets the end_time to current UTC time and calculates duration in hours.
+    - `to_dict()`: returns the session as a dictionary for storage or serialization.
+
+    ```python
+    def end_session(self):
+        self.end_time = datetime.utcnow().isoformat()
+        start = datetime.fromisoformat(self.start_time)
+        end = datetime.fromisoformat(self.end_time)
+        self.duration = round((end - start).total_seconds() / 3600, 2)
+
+    def to_dict(self):
+        return self.__dict__
+    ```
+
+    example dictionary structure after ending a session:
+
+    ```json
+    {
+        "id": "f49d0c33-b6cf-4d77-a274-8903b38c8ed2",
+        "user_id": "user_123",
+        "start_time": "2025-09-25T09:00:00.000000",
+        "end_time": "2025-09-25T11:30:00.000000",
+        "duration": 2.5
+    }
+    ```
+
+##### Services
+
+This module defines the business logic layer of the application. Services orchestrate operations on domain entities and delegate persistence to repositories.  
+They are designed with **Single Responsibility Principle (SRP)** in mind:  
+- They only handle the application logic and orchestration.  
+- They are not aware of database implementations or infrastructure details.  
+- They rely on repository interfaces to persist or retrieve domain entities.  
+
+To give further examples, **TaskService** and **WorkSessionService** services will be explained below.  
+
+- **TaskService**  
+    Provides the application logic for creating, listing, and completing tasks.  
+
+    It exposes the following methods:  
+    - `create_task(title: str)`: creates a new Task entity and delegates persistence to the repository.  
+    - `list_tasks()`: retrieves all tasks from the repository.  
+    - `complete_task(task_id: str)`: marks a task as completed by delegating the update to the repository.  
+
+    Example usage:  
+
+    ```python
+    task_service = TaskService(repo)
+    new_task = task_service.create_task("Finish project report")
+    tasks = task_service.list_tasks()
+    completed = task_service.complete_task(new_task["id"])
+    ```  
+
+    Example result after creating a task:  
+
+    ```json
+    {
+        "id": "3b9f7b8e-6d7a-4e3f-a23c-5a0efb9b72c9",
+        "title": "Finish project report",
+        "completed": false,
+        "created_at": "2025-09-25T10:15:30.123456",
+        "updated_at": null
+    }
+    ```
+
+- **WorkSessionService**  
+    Provides the application logic for starting and ending productive work sessions.  
+
+    It exposes the following methods:  
+    - `start_session(user_id: str)`: creates a new WorkSession entity for the given user and persists it through the repository.  
+    - `end_session(session_id: str)`: closes an existing session by calculating the duration and updating it through the repository.  
+
+    Example usage:  
+
+    ```python
+    session_service = WorkSessionService(repo)
+    session = session_service.start_session("user_123")
+    closed = session_service.end_session(session["id"])
+    ```  
+
+    Example result after ending a session:  
+
+    ```json
+    {
+        "id": "f49d0c33-b6cf-4d77-a274-8903b38c8ed2",
+        "user_id": "user_123",
+        "start_time": "2025-09-25T09:00:00.000000",
+        "end_time": "2025-09-25T11:30:00.000000",
+        "duration": 2.5
+    }
+    ```

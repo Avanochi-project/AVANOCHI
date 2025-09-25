@@ -1,6 +1,6 @@
 # shared/repositories.py
 from abc import ABC, abstractmethod
-from shared.models import Task, WorkSession
+from shared.entities import Task, WorkSession
 from shared.database import CosmosDBService
 
 # ==============================

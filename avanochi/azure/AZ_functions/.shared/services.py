@@ -1,6 +1,6 @@
 # shared/services.py
 from shared.repositories import ITaskRepository, IWorkSessionRepository
-from shared.models import Task, WorkSession
+from shared.entities import Task, WorkSession
 
 class TaskService:
     # Service layer for Task operations.
