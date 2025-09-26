@@ -1,30 +1,35 @@
-# shared/repositories.py
+# repositories/base/base_repo.py
+
 from abc import ABC, abstractmethod
-from shared.entities import Task, WorkSession
-from shared.database import CosmosDBService
+from shared.database import CosmosDBService, DatabaseError
 
-# ==============================
-#   Repository Interfaces
-# ==============================
 
-class ITaskRepository(ABC):
-    @abstractmethod
-    def create_task(self, task: Task): pass
+class BaseRepository(ABC):
+    # Abstract base repository with generic CRUD operations
+
+    def __init__(self, db_service: CosmosDBService):
+        self._db = db_service
 
     @abstractmethod
-    def list_tasks(self): pass
+    def entity_type(self) -> str:
+        # Must be implemented by child class (e.g. "task", "work_session")
+        pass
 
-    @abstractmethod
-    def complete_task(self, task_id: str): pass
+    def create(self, entity: dict) -> dict:
+        entity["type"] = self.entity_type()
+        return self._db.create_item(entity)
 
+    def get(self, entity_id: str) -> dict:
+        return self._db.read_item(entity_id, partition_key=entity_id)
 
-class IWorkSessionRepository(ABC):
-    @abstractmethod
-    def start_session(self, session: WorkSession): pass
+    def update(self, entity: dict) -> dict:
+        return self._db.upsert_item(entity)
 
-    @abstractmethod
-    def end_session(self, session_id: str): pass
+    def delete(self, entity_id: str) -> None:
+        self._db.delete_item(entity_id, partition_key=entity_id)
 
+    def query(self, query: str, params: list = None) -> list[dict]:
+        return self._db.send_query(query, params)
 
 # ====================================
 #   CosmosDB Implementations
