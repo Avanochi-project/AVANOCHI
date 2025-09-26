@@ -37,8 +37,8 @@ The AZ_functions module serves as the backbone of Avanochi’s cloud logic. It o
     - init.py: Marks the package as importable and optionally exposes shared interfaces.
     - `credential_manager.py`: Handles secure authentication and credential rotation.
     - `database.py`: Defines the database connection layer and abstracts CRUD operations.
-    - `models.py`: Declares data models and schemas used across functions.
-    - `repositories.py`: Implements the repository pattern, linking models with database logic.
+    - `entities/`: Declares data models and schemas used across functions.
+    - `repos/`: Implements the repository pattern, linking models with database logic.
     - `services.py`: Provides high-level services that orchestrate business logic and integrations.
 
 - `assistant/`
@@ -133,13 +133,22 @@ The main responsibilities can be divided into the following components:
     ```
 
 ##### Entities
-This module defines the core domain entities of the application. Entities are plain Python classes that represent the business objects of Avanochi, such as **tasks** and **work sessions**.
-They are designed with **Single Responsibility Principle (SRP)** in mind:
+This module defines the **core domain entities** of the application.  
+Entities are plain Python classes that represent the business objects of Avanochi, such as **tasks**, **work sessions**, and **users**.
+
+They are designed with the **Single Responsibility Principle (SRP)** in mind:
 - They only handle their own state and basic transformations.
 - They are not aware of database operations or business orchestration.
-- They provide serialization methods so that higher layers (repositories, services) can persist or transport them as dictionaries/JSON.
+- They provide serialization methods (`to_dict`) so that higher layers (repositories, services) can persist or transport them as dictionaries/JSON.
 
-To give further examples, **tasks** and **work sessions** will be explained bellow.
+The folder structure will be explained bellow with each entity:
+```bash
+shared/
+└── entities/
+    ├── task.py
+    ├── work_session.py
+    └── user.py
+```
 
 - **Entity Tasks**
     Represents a single task in the system, having the following fields:
@@ -200,6 +209,33 @@ example dictionary structure after ending a session:
     "start_time": "2025-09-25T09:00:00.000000",
     "end_time": "2025-09-25T11:30:00.000000",
     "duration": 2.5
+}
+```
+
+- **Entity User**
+Represents a user of the system.
+
+Fields:
+- `id`: unique identifier (UUID)
+- `name`: display name of the user
+- `created_at`: UTC timestamp of user creation (ISO format)
+- `updated_at`: timestamp of the last update (optional)
+
+It contains only one method to return the `user` as a dictionary:
+
+```python
+def to_dict(self):
+    return self.__dict__
+```
+
+output would be something like this:
+
+```json
+{
+    "id": "21e4e82b-03d2-4e15-8d73-ff3b8737f8b0",
+    "name": "Alice",
+    "created_at": "2025-09-26T08:15:45.123456",
+    "updated_at": null
 }
 ```
 
@@ -265,6 +301,7 @@ To give further examples, **TaskService** and **WorkSessionService** services wi
     ```
 
 ##### Repositories
+
 Repositories act as the **public-facing API of the persistence layer**.  
 They are the only access point available for services and higher layers to communicate with the database, while all lower-level components such as `CosmosDBService` and `CredentialManager` remain private and inaccessible outside this layer.  
 
@@ -274,73 +311,88 @@ They are responsible for persisting and retrieving domain entities, designed wit
 - They are not aware of business logic or entity rules.  
 - They provide a clean abstraction that services can use without depending on database details.  
 
-By exposing **abstract base classes (interfaces)**, repositories enforce clear contracts that any implementation must follow. This ensures that:  
-- Services and clients remain fully decoupled from the database technology.  
-- All database operations are centralized and consistent.  
-- Infrastructure concerns are hidden, following the **Dependency Inversion Principle (DIP)**.  
-- Future changes in persistence (e.g., switching from CosmosDB to another database) require no modification in the business logic or client code.  
+The folder structure will be explained bellow with each repo:
+```bash
+shared/
+└── repos/
+    ├── base_repo.py
+    ├── task_repo.py
+    ├── user_repo.py
+    └── work_session_repo.py
+```
 
-To give further examples, **tasks** and **work sessions** repositories will be explained below.  
+- **BaseRepository**  
+    `BaseRepository` is an **abstract class** that defines generic CRUD operations and query execution.  
+    All concrete repositories inherit from this base class and implement their own `entity_type()` to identify the type of document they manage in the database.
+ 
+    The methods provided are the following:  
+    - `create(entity: dict) -> dict`  
+    Persists a new entity in the database. The repository automatically injects its `type` before delegating to Cosmos. Returns the stored entity as a dictionary.  
+    - `get(entity_id: str) -> dict`  
+    Retrieves a single entity by its unique identifier. If the entity does not exist, a `DatabaseError` will be raised.  
+    - `update(entity: dict) -> dict`  
+    Updates an existing entity in the database, or creates it if it does not exist (Cosmos upsert operation). Returns the updated entity as a dictionary.  
+    - `delete(entity_id: str) -> None`  
+    Deletes an entity by its unique identifier. If the entity does not exist, the operation raises a `DatabaseError`.  
+    - `query(query: str, params: list = None) -> list[dict]`  
+    Executes a SQL-like query against the container. Parameters can be passed as a list of dictionaries (`{"name": ..., "value": ...}`). Returns a list of matching entities.  
 
-- **Interface ITaskRepository**  
-    Defines the contract for managing `Task` entities. Any class implementing this interface must provide the following methods:  
+    By extending `BaseRepository`, all repositories benefit from these generic operations without duplicating code.
+
+- **TaskRepository**  
+    Manages `Task` entities.  
+
+    Methods:
     - `create_task(task: Task)`: persists a new task.  
     - `list_tasks()`: retrieves all tasks.  
-    - `complete_task(task_id: str)`: marks a task as completed.  
-
-- **Repository CosmosTaskRepository (ITaskRepository)**  
-    Concrete implementation of `ITaskRepository` using Cosmos DB.  
-    - On initialization, retrieves a container from `CosmosDBService`.  
-    - `create_task()`: inserts a new task document.  
-    - `list_tasks()`: returns all task documents in the container.  
-    - `complete_task()`: finds a task by ID, marks it as completed, and updates it in the database.  
+    - `complete_task(task_id: str)`: marks a task as completed.   
 
     Example usage:  
     ```python
-    repo = CosmosTaskRepository(db_service)
+    repo = TaskRepository(db_service)
     task = Task("Finish report")
     repo.create_task(task)
     tasks = repo.list_tasks()
     repo.complete_task(task.id)
     ```  
 
-    Example document stored in the database:  
-    ```json
-    {
-        "id": "3b9f7b8e-6d7a-4e3f-a23c-5a0efb9b72c9",
-        "title": "Finish project report",
-        "completed": true,
-        "created_at": "2025-09-25T10:15:30.123456",
-        "updated_at": null
-    }
-    ```
+- **WorkSessionRepository**  
+    Manages `WorkSession` entities.  
 
-- **Interface IWorkSessionRepository**  
-    Defines the contract for managing `WorkSession` entities. Any class implementing this interface must provide the following methods:  
+    Methods:  
     - `start_session(session: WorkSession)`: persists a new work session.  
-    - `end_session(session_id: str)`: closes an existing work session and updates its duration.  
-
-- **Repository CosmosWorkSessionRepository (IWorkSessionRepository)**  
-    Concrete implementation of `IWorkSessionRepository` using Cosmos DB.  
-    - On initialization, retrieves a container from `CosmosDBService`.  
-    - `start_session()`: inserts a new work session document.  
-    - `end_session()`: retrieves a session by ID, calculates its duration, and updates the record in the database.  
+    - `end_session(session_id: str)`: closes an existing session and updates its duration.  
+    - `get_active_session(user_id: str)`: returns the current active session for a user.  
+    - `list_sessions(user_id: str)`: retrieves all sessions for a given user.  
 
     Example usage:  
     ```python
-    repo = CosmosWorkSessionRepository(db_service)
+    repo = WorkSessionRepository(db_service)
     session = WorkSession("user_123")
     repo.start_session(session)
     repo.end_session(session.id)
+    active = repo.get_active_session("user_123")
+    sessions = repo.list_sessions("user_123")
     ```  
 
-    Example document stored in the database after ending a session:  
-    ```json
-    {
-        "id": "f49d0c33-b6cf-4d77-a274-8903b38c8ed2",
-        "user_id": "user_123",
-        "start_time": "2025-09-25T09:00:00.000000",
-        "end_time": "2025-09-25T11:30:00.000000",
-        "duration": 2.5
-    }
-    ```
+- **UserRepository**  
+    Manages `User` entities.  
+
+    Methods:  
+    - `create_user(user: User)`: persists a new user.  
+    - `get_user(user_id: str)`: retrieves a user by ID.  
+    - `update_user(user: User)`: updates an existing user.  
+    - `delete_user(user_id: str)`: deletes a user by ID.  
+    - `list_users()`: lists all users in the database.  
+
+    Example usage:  
+    ```python
+    repo = UserRepository(db_service)
+    user = User("Alice")
+    repo.create_user(user)
+    fetched = repo.get_user(user.id)
+    repo.update_user(user)
+    all_users = repo.list_users()
+    repo.delete_user(user.id)
+    ```  
+
