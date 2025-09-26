@@ -47,7 +47,7 @@ Productivity application with a playful approach, designed to improve `time mana
     - Generation of `preventive alerts` if working more than 9h is expected.  
     - Prevention of `stress and excessive hours`.  
 
-![alt text](../diagrams/architecture.png)
+![alt text](../diagrams/azure_architecture.png)
 
 ## 3. Features
 - Performance statistics

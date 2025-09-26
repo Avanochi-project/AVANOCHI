@@ -46,7 +46,7 @@ Aplicación de `productividad` con un enfoque lúdico, diseñada para mejorar la
     - Generación de `alertas preventivas` si se prevé trabajar más de 9h.  
     - Prevención de `estrés y exceso de horas`.  
 
-![alt text](../diagrams/architecture.png)
+![alt text](../diagrams/azure_architecture.png)
 
 ## 3. Features
 - Estadísticas de rendimiento
