@@ -1,6 +1,6 @@
 
 <p align="center">
-    <img src="../../../assets/avanochi/art/avanochi-portrait.png" alt="Avanochi Portrait"/>
+    <img src="../../../assets/avanochi/art/avanochi_portrait.png" alt="Avanochi Portrait"/>
 </p>
 
 <div class="page-break"></div>
