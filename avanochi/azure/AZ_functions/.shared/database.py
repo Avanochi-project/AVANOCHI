@@ -1,6 +1,10 @@
 # shared/database.py
-from azure.cosmos import CosmosClient, PartitionKey
+from azure.cosmos import CosmosClient, PartitionKey, exceptions
 from shared.credential_manager import CredentialManager
+
+class DatabaseError(Exception):
+    # Custom exception wrapper for all CosmosDB-related errors.
+    pass
 
 class CosmosDBService:
     
@@ -33,3 +37,53 @@ class CosmosDBService:
     def container(self):
         """Expose the container proxy for direct operations."""
         return self._container
+
+    # ==============================
+    # Generic CRUD operations
+    # ==============================
+
+    def create_item(self, item: dict) -> dict:
+        # Insert a new item into the container.
+        try:
+            return self._container.create_item(body=item)
+        except exceptions.CosmosHttpResponseError as e:
+            raise DatabaseError(f"Failed to create item: {e.message}") from e
+        
+    def read_item(self, item_id: str, partition_key: str) -> dict:
+        # Read a single item from the container.
+        try:
+            return self._container.read_item(item=item_id, partition_key=partition_key)
+        except exceptions.CosmosResourceNotFoundError:
+            raise DatabaseError(f"Item with id '{item_id}' not found.")
+        except exceptions.CosmosHttpResponseError as e:
+            raise DatabaseError(f"Failed to read item '{item_id}': {e.message}") from e
+
+    def upsert_item(self, item: dict) -> dict:
+        # Insert or update an item.
+        try:
+            return self._container.upsert_item(body=item)
+        except exceptions.CosmosHttpResponseError as e:
+            raise DatabaseError(f"Failed to upsert item: {e.message}") from e
+
+    def delete_item(self, item_id: str, partition_key: str) -> None:
+        # Delete an item by id.
+        try:
+            self._container.delete_item(item=item_id, partition_key=partition_key)
+        except exceptions.CosmosResourceNotFoundError:
+            raise DatabaseError(f"Item with id '{item_id}' not found, cannot delete.")
+        except exceptions.CosmosHttpResponseError as e:
+            raise DatabaseError(f"Failed to delete item '{item_id}': {e.message}") from e
+
+    def send_query(self, query: str, parameters: list = None) -> list[dict]:
+        # Execute a query against the container.
+        if parameters is None:
+            parameters = []
+        try:
+            results = self._container.query_items(
+                query=query,
+                parameters=parameters,
+                enable_cross_partition_query=True
+            )
+            return [item for item in results]
+        except exceptions.CosmosHttpResponseError as e:
+            raise DatabaseError(f"Query failed: {e.message}") from e
