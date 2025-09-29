@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="https://avanochi-project.github.io/AVANOCHI/avanochi/web-app/avanochi-frontend/src/index.html">
+  <a href="https://avanochi-project.github.io/AVANOCHI">
     <img src="https://img.shields.io/badge/Avanochi%20Web-orange?style=for-the-badge&logo=appveyor&logoColor=white" alt="Avanochi Web" height="40">
   </a>
 </p>
