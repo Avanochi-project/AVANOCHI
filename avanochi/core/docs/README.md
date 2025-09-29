@@ -222,31 +222,31 @@ example dictionary structure after ending a session:
 ```
 
 - **Entity User**
-Represents a user of the system.
+    Represents a user of the system.
 
-Fields:
-- `id`: unique identifier (UUID)
-- `name`: display name of the user
-- `created_at`: UTC timestamp of user creation (ISO format)
-- `updated_at`: timestamp of the last update (optional)
+    Fields:
+    - `id`: unique identifier (UUID)
+    - `name`: display name of the user
+    - `created_at`: UTC timestamp of user creation (ISO format)
+    - `updated_at`: timestamp of the last update (optional)
 
-It contains only one method to return the `user` as a dictionary:
+    It contains only one method to return the `user` as a dictionary:
 
-```python
-def to_dict(self):
-    return self.__dict__
-```
+    ```python
+    def to_dict(self):
+        return self.__dict__
+    ```
 
-output would be something like this:
+    output would be something like this:
 
-```json
-{
-    "id": "21e4e82b-03d2-4e15-8d73-ff3b8737f8b0",
-    "name": "Alice",
-    "created_at": "2025-09-26T08:15:45.123456",
-    "updated_at": null
-}
-```
+    ```json
+    {
+        "id": "21e4e82b-03d2-4e15-8d73-ff3b8737f8b0",
+        "name": "Alice",
+        "created_at": "2025-09-26T08:15:45.123456",
+        "updated_at": null
+    }
+    ```
 
 ##### Repositories
 
