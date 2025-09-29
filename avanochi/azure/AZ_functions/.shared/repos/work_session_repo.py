@@ -1,7 +1,7 @@
 # shared/repos/work_session_repository.py
 
 from shared.repos.base_repo import BaseRepository
-from domain.entities import WorkSession
+from shared.entities import WorkSession
 
 
 class WorkSessionRepository(BaseRepository):

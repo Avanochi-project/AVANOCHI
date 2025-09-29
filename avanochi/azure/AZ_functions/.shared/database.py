@@ -20,7 +20,7 @@ class CosmosDBService:
     def __init__(self, credential_manager: CredentialManager):
         # Initialize the Cosmos DB client and ensure the database and container exist.
         
-        creds = credential_manager.get_cosmos_db_credentials()
+        creds = credential_manager.get_cosmos_credentials()
         self._url = creds["uri"]
         self._key = creds["primary_key"]
         self._database_name = creds["database_name"]
