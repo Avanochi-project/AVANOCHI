@@ -51,12 +51,16 @@ In summary, AVANOCHI is not just a productivity app, but a **digital companion**
 
 # 1. General Architecture: Azure serverless service 
 
+Avanochi is built on a **serverless architecture** using Microsoft Azure Functions. This approach was chosen to ensure scalability, modularity, and cost efficiency. Instead of relying on a traditional web server that requires continuous maintenance and resource allocation, serverless functions allow us to run code only when specific events are triggered. This event-driven model aligns perfectly with Avanochi’s needs, where different modules—such as task tracking, AI recommendations, and health reminders—can operate independently without interfering with each other.  
+
+By adopting a serverless structure, we gain several advantages: reduced operational overhead, automatic scaling according to workload, and seamless integration with other Azure services like Cosmos DB, AI Foundry, and Speech Services. This design ensures that Avanochi remains lightweight yet powerful, focusing development efforts on **business logic and user experience** rather than infrastructure management.  
+
 ## 1.1 AZ_functions directory
-The AZ_functions module serves as the backbone of Avanochi’s cloud logic. It organizes all serverless functions into thematic domains, each responsible for a specific aspect of the application. This modular design ensures scalability, maintainability, and adherence to the SOLID principles.
+The AZ_functions module serves as the backbone of Avanochi’s cloud logic. It organizes all serverless functions into thematic domains, each responsible for a specific aspect of the application. This modular layout naturally aligns with Azure Functions’ event-driven model: each directory encapsulates functions tied to specific triggers and responsibilities.  
 
-### 1.1.1 Service structures
+Such organization simplifies both development and testing by isolating functionalities into independent domains. Each domain can evolve on its own lifecycle, making it easier to extend or replace components without affecting the rest of the system. The result is a clean, predictable architecture that supports continuous integration and long-term maintainability, while keeping the cloud logic transparent and easy to navigate.
 
-### 1.1.2 Structure Overview
+### 1.1.1 Structure Overview
 - `.shared/`: This module ensures consistency, reusability, and maintainability, reducing code duplication across the system.
     - Centralizes cross-cutting concerns and reusable components for all other modules.
     - init.py: Marks the package as importable and optionally exposes shared interfaces.
@@ -92,6 +96,8 @@ The AZ_functions module serves as the backbone of Avanochi’s cloud logic. It o
 - `templates/`
     - Stores pre-defined templates such as `cosmosdb.json`
     - Provides ready-to-use schemas for database bindings and resource definitions
+
+<div class="page-break"></div>
 
 #### Shared Architecture
 The `.shared` module is a foundational layer that centralizes all cross-cutting concerns within the AZ_functions ecosystem. It ensures that domain-specific functions (assistant, health, interaction, work) can focus purely on their logic, while shared components provide common services, models, and infrastructure handling.
