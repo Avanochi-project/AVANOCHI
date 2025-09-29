@@ -259,6 +259,7 @@
 	border-radius: 6px;
 	padding: 7px 14px;
 	font-size: 0.98rem;
+	 border: none !important;
 	box-shadow: 0 2px 8px rgba(210,91,1,0.10);
 	transition: background 0.2s, color 0.2s, box-shadow 0.2s;
 	cursor: pointer;
@@ -310,18 +311,14 @@
 	background: none;
 	color: #e53935;
 	border: none;
-		font-size: 1rem;
-		font-weight: bold;
-		line-height: 1;
-		box-shadow: none;
-		transition: background 0.2s, color 0.2s;
+	font-size: 1rem;
+	font-weight: bold;
+	line-height: 1;
+	box-shadow: none;
+	transition: background 0.2s, color 0.2s;
+}
 .task-card-today button[aria-label]:hover,
 .task-card-today button[ng-reflect-ng-click]:hover {
 	background: #ffebee;
 	color: #b71c1c;
-}
-.task-card-today .completed {
-	text-decoration: line-through;
-	opacity: 0.6;
-	color: #bdbdbd;
 }
