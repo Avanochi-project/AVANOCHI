@@ -14,6 +14,22 @@ interface Task {
   imports: [CommonModule]
 })
 export class TasksToday {
+  timerPaused = signal<boolean>(false);
+
+  pausarTimer() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+      this.timerPaused.set(true);
+    }
+  }
+
+  reanudarTimer() {
+    if (!this.timerInterval && this.jornadaInicio() && !this.jornadaFin() && this.timerPaused()) {
+      this.startTimer();
+      this.timerPaused.set(false);
+    }
+  }
   jornadaInicio = signal<string | null>(null);
   jornadaFin = signal<string | null>(null);
   timer = signal<string>('00:00:00');

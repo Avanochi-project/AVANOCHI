@@ -8,12 +8,16 @@
       </div>
     </div>
     <div class="jornada-block">
-      <button (click)="registrarInicio()" [disabled]="jornadaInicio()">Iniciar jornada</button>
-      <button (click)="registrarFin()" [disabled]="!jornadaInicio() || jornadaFin()">Finalizar jornada</button>
+      <div class="jornada-btns">
+  <button (click)="registrarInicio()" [disabled]="!!jornadaInicio()">Iniciar jornada</button>
+  <button (click)="pausarTimer()" [disabled]="!jornadaInicio() || !!jornadaFin() || timerPaused()">Pausar</button>
+  <button (click)="reanudarTimer()" [disabled]="!timerPaused() || !!jornadaFin()">Reanudar</button>
+  <button (click)="registrarFin()" [disabled]="!jornadaInicio() || !!jornadaFin()">Finalizar jornada</button>
+      </div>
       <div class="jornada-info">
-        <span *ngIf="jornadaInicio()"><strong>Inicio:</strong> {{ jornadaInicio() }}</span>
-        <span *ngIf="jornadaFin()"><strong>Fin:</strong> {{ jornadaFin() }}</span>
-        <span *ngIf="jornadaInicio() && !jornadaFin()" class="timer-label"><strong>Tiempo actual:</strong> <span class="timer-value">{{ timer() }}</span></span>
+        <span *ngIf="!jornadaFin()" class="timer-label"><strong>Tiempo de jornada actual:</strong> <span class="timer-value">{{ timer() }}</span></span>
+        <span *ngIf="jornadaFin()" class="timer-label"><strong>Tiempo final:</strong> <span class="timer-value">{{ timer() }}</span></span>
+  <div *ngIf="jornadaFin()" class="jornada-completada"><strong>✅ Jornada completada. ¡Buen trabajo!</strong></div>
       </div>
     </div>
     <div class="user-stats-preview">
