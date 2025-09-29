@@ -172,6 +172,9 @@
 .task-card { /* Usa el CSS global para mantener el diseño */ }
 /* --- Modern Reset para el bloque de tareas de hoy (igual que ayer) --- */
 .task-card-today {
+	flex: 1;
+	align-self: stretch;
+	min-height: 480px;
 	background: linear-gradient(135deg, #f8fafc 60%, #ffe082 100%) !important;
 	color: #b85c00 !important;
 	border: 3px solid #ffb300 !important;
@@ -180,45 +183,36 @@
 	justify-content: flex-start;
 	padding: 24px 20px 20px 20px;
 	border-radius: 18px;
-	width: 420px;
-	min-width: 420px;
-	max-width: 420px;
-	height: 480px;
+		width: 500px;
+		min-width: 500px;
+		max-width: 500px;
+		flex: 1 1 0;
+		min-height: 480px;
 	overflow: hidden;
 	box-shadow: 0 6px 24px rgba(255,179,0,0.10), 0 1.5px 4px rgba(0,0,0,0.08);
 }
+
 .task-card-today .delete-btn {
-		background: #ff5252;
-		border: none;
-		border-radius: 50%;
-		width: 32px;
-		height: 32px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		margin-left: 8px;
-		transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
-		box-shadow: 0 2px 8px rgba(255,82,82,0.10);
+	background: transparent;
+	border: none;
+	color: #d32f2f;
+	font-size: 1.3rem;
+	cursor: pointer;
+	padding: 2px 8px;
+	margin-left: 8px;
+	border-radius: 4px;
+	transition: background 0.2s, color 0.2s;
+	outline: none;
 }
 .task-card-today .delete-btn:hover {
-		background: #b71c1c;
-		transform: scale(1.15);
-		box-shadow: 0 0 0 4px rgba(183,28,28,0.18), 0 4px 16px rgba(183,28,28,0.18);
+	background: #ffeaea;
+	color: #b71c1c;
 }
-.task-card-today .delete-x {
-	color: #fff;
-	font-size: 2rem;
-	font-weight: bold;
-	line-height: 1;
-	pointer-events: none;
-	user-select: none;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 100%;
-	height: 100%;
+.task-card-today .delete-btn:active {
+	background: #ffd6d6;
+	color: #b71c1c;
 }
+
 .task-card-today h2 {
 	font-size: 1.3rem;
 	color: #000 !important;
@@ -279,8 +273,9 @@
 	padding: 0;
 	margin: 0;
 	width: 100%;
+	flex: 1 1 auto;
+	min-height: 0;
 	overflow-y: auto;
-	max-height: 320px;
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
@@ -315,10 +310,11 @@
 	background: none;
 	color: #e53935;
 	border: none;
-	font-size: 1.1rem;
-	border-radius: 50%;
-	transition: background 0.2s, color 0.2s;
-}
+		font-size: 1rem;
+		font-weight: bold;
+		line-height: 1;
+		box-shadow: none;
+		transition: background 0.2s, color 0.2s;
 .task-card-today button[aria-label]:hover,
 .task-card-today button[ng-reflect-ng-click]:hover {
 	background: #ffebee;

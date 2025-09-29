@@ -70,7 +70,15 @@ export class TasksToday {
     if (this.timerInterval) clearInterval(this.timerInterval);
     this.timerInterval = null;
   }
-  tasks = signal<Task[]>([]);
+  tasks = signal<Task[]>([
+    { title: 'Revisar correos importantes', done: false },
+    { title: 'Terminar informe semanal para el equipo de desarrollo', done: false },
+    { title: 'Llamar a cliente', done: true },
+    { title: 'Actualizar documento de proyecto con los últimos cambios y comentarios recibidos', done: false },
+    { title: 'Enviar propuesta de mejora a dirección', done: false },
+    { title: 'Preparar presentación para la reunión de mañana', done: false },
+    { title: 'Revisar tareas pendientes en Jira', done: false }
+  ]);
   newTask = signal('');
 
   addTask() {

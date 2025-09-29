@@ -41,9 +41,7 @@
       <li *ngFor="let task of tasks(); let i = index">
         <input type="checkbox" [checked]="task.done" (change)="toggleDone(i)" />
         <span [style.textDecoration]="task.done ? 'line-through' : 'none'">{{ task.title }}</span>
-        <button class="delete-btn" (click)="deleteTask(i)" aria-label="Eliminar tarea">
-          <span class="delete-x">×</span>
-        </button>
+  <button class="delete-btn" (click)="deleteTask(i)" aria-label="Eliminar tarea">×</button>
       </li>
     </ul>
   </div>
