@@ -1,3 +1,64 @@
+.jornada-completada {
+	margin-top: 22px;
+	font-size: 1.08rem;
+	color: #388e3c;
+	background: #e8f5e9;
+	border-radius: 8px;
+	padding: 8px 16px;
+	text-align: center;
+	font-weight: 600;
+	box-shadow: 0 2px 8px rgba(56,142,60,0.08);
+}
+.avatar-stats-group .jornada-block button {
+	background: #d25b01 !important;
+	color: white !important;
+	font-weight: 600 !important;
+	border: none !important;
+	border-radius: 6px !important;
+	padding: 7px 14px !important;
+	font-size: 0.98rem !important;
+	box-shadow: 0 2px 8px rgba(210,91,1,0.10) !important;
+	transition: background 0.2s, color 0.2s, box-shadow 0.2s !important;
+	cursor: pointer !important;
+	margin-right: 10px !important;
+}
+.avatar-stats-group .jornada-block button:hover:not(:disabled) {
+	background: #f59a25 !important;
+	color: #fff !important;
+	box-shadow: 0 4px 16px rgba(245,154,37,0.18) !important;
+}
+.avatar-stats-group .jornada-block button:disabled {
+	background: #ffe0b2 !important;
+	color: #bdbdbd !important;
+	cursor: not-allowed !important;
+}
+.avatar-stats-group .jornada-block {
+	background: #fff !important;
+	border-radius: 14px !important;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.07) !important;
+	border: 3px solid #ffb300 !important;
+	padding: 18px 22px !important;
+	min-width: 260px !important;
+	font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif !important;
+	margin: 18px 0 18px 0 !important;
+		display: flex !important;
+		flex-direction: column !important;
+		align-items: center !important;
+.jornada-btns {
+	display: flex;
+	flex-direction: row;
+	gap: 12px;
+	margin-bottom: 8px;
+	justify-content: center;
+}
+.jornada-info {
+	font-size: 1.08rem;
+	color: #b85c00;
+	margin-top: 8px;
+	text-align: center;
+}
+	gap: 10px !important;
+}
 .timer-label {
 	display: inline-block;
 	margin-top: 8px;
@@ -26,16 +87,18 @@
 .user-stats-preview {
 	margin-top: 38px;
 	margin-left: 8px;
-		background: #fff;
-		border-radius: 14px;
-		box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-		padding: 18px 22px;
+			background: #fff;
+			border-radius: 14px;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+			border: 3px solid #ffb300;
+			padding: 18px 22px;
 			min-width: 260px;
-			min-height: 180px;
-		font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
-		border: 3px solid #ffb300;
-}
-.user-stats-preview h3 {
+			font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+			margin: 18px 0 18px 0;
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 10px;
 	font-size: 1.15rem;
 	color: #d25b01;
 	margin-bottom: 10px;
@@ -109,6 +172,9 @@
 .task-card { /* Usa el CSS global para mantener el diseño */ }
 /* --- Modern Reset para el bloque de tareas de hoy (igual que ayer) --- */
 .task-card-today {
+	flex: 1;
+	align-self: stretch;
+	min-height: 480px;
 	background: linear-gradient(135deg, #f8fafc 60%, #ffe082 100%) !important;
 	color: #b85c00 !important;
 	border: 3px solid #ffb300 !important;
@@ -117,45 +183,36 @@
 	justify-content: flex-start;
 	padding: 24px 20px 20px 20px;
 	border-radius: 18px;
-	width: 420px;
-	min-width: 420px;
-	max-width: 420px;
-	height: 480px;
+		width: 500px;
+		min-width: 500px;
+		max-width: 500px;
+		flex: 1 1 0;
+		min-height: 480px;
 	overflow: hidden;
 	box-shadow: 0 6px 24px rgba(255,179,0,0.10), 0 1.5px 4px rgba(0,0,0,0.08);
 }
+
 .task-card-today .delete-btn {
-		background: #ff5252;
-		border: none;
-		border-radius: 50%;
-		width: 32px;
-		height: 32px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		margin-left: 8px;
-		transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
-		box-shadow: 0 2px 8px rgba(255,82,82,0.10);
+	background: transparent;
+	border: none;
+	color: #d32f2f;
+	font-size: 1.3rem;
+	cursor: pointer;
+	padding: 2px 8px;
+	margin-left: 8px;
+	border-radius: 4px;
+	transition: background 0.2s, color 0.2s;
+	outline: none;
 }
 .task-card-today .delete-btn:hover {
-		background: #b71c1c;
-		transform: scale(1.15);
-		box-shadow: 0 0 0 4px rgba(183,28,28,0.18), 0 4px 16px rgba(183,28,28,0.18);
+	background: #ffeaea;
+	color: #b71c1c;
 }
-.task-card-today .delete-x {
-	color: #fff;
-	font-size: 2rem;
-	font-weight: bold;
-	line-height: 1;
-	pointer-events: none;
-	user-select: none;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 100%;
-	height: 100%;
+.task-card-today .delete-btn:active {
+	background: #ffd6d6;
+	color: #b71c1c;
 }
+
 .task-card-today h2 {
 	font-size: 1.3rem;
 	color: #000 !important;
@@ -192,7 +249,13 @@
 	background: #d25b01;
 	color: white;
 	font-weight: 600;
-	border: none;
+}
+.avatar-stats-group .jornada-block button:hover:not(:disabled) {
+	background: #f59a25;
+	color: #fff;
+	box-shadow: 0 4px 16px rgba(245,154,37,0.18);
+}
+.task-card-today button {
 	border-radius: 6px;
 	padding: 7px 14px;
 	font-size: 0.98rem;
@@ -210,8 +273,9 @@
 	padding: 0;
 	margin: 0;
 	width: 100%;
+	flex: 1 1 auto;
+	min-height: 0;
 	overflow-y: auto;
-	max-height: 320px;
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
@@ -246,10 +310,11 @@
 	background: none;
 	color: #e53935;
 	border: none;
-	font-size: 1.1rem;
-	border-radius: 50%;
-	transition: background 0.2s, color 0.2s;
-}
+		font-size: 1rem;
+		font-weight: bold;
+		line-height: 1;
+		box-shadow: none;
+		transition: background 0.2s, color 0.2s;
 .task-card-today button[aria-label]:hover,
 .task-card-today button[ng-reflect-ng-click]:hover {
 	background: #ffebee;
