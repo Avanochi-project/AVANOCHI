@@ -142,8 +142,7 @@ The CosmosDBService class abstracts the complexity of creating and maintaining t
 By depending exclusively on the `CredentialManager` to retrieve its credentials, this class adheres to the Single Responsibility Principle, keeping authentication logic separated from database logic. This approach guarantees scalability, maintainability, and consistent usage of environment-based configurations.
 The main responsibilities can be divided into the following components:
 
-- **Initialization (`__init__`)**
-    Upon instantiation, the service retrieves Cosmos DB credentials through the CredentialManager and sets up the database connection.
+- **Initialization (`__init__`)**: Upon instantiation, the service retrieves Cosmos DB credentials through the CredentialManager and sets up the database connection.
     - It creates a `CosmosClient` with the provided URI and primary key.
     - It ensures the target database exists (or creates it if missing).
     - It ensures the container exists (or creates it if missing) with a default partition key and throughput configuration.
@@ -168,6 +167,91 @@ The main responsibilities can be divided into the following components:
             offer_throughput=400
         )
     ```
+
+- **Database methods**: The `CosmosDBService` provides a set of generic CRUD methods and query execution helpers that abstract direct interaction with Cosmos DB:
+
+    - `create_item()`: Inserts a new document into the container. Automatically generates a unique `id` if not provided and validates the presence of a `user_id`.
+
+    ```python
+    def create_item(self, item: dict) -> dict:
+        try:
+            # Ensure unique ID
+            if "id" not in item:
+                item["id"] = str(uuid.uuid4())
+
+            if "user_id" not in item:
+                raise DatabaseError("Missing required field: 'user_id'")
+
+            created = self._container.create_item(body=item)
+            logging.info(f"Item created with id={created['id']}")
+            return created
+        except exceptions.CosmosHttpResponseError as e:
+            logging.error(f"Failed to create item: {e.message}")
+            raise DatabaseError(f"Failed to create item: {e.message}") from e
+    ```
+
+    - `read_item()`: Retrieves a single document by its `id` and partition key. Raises a `DatabaseError` if the item is not found.
+
+    ```python
+    def read_item(self, item_id: str, partition_key: str) -> dict:
+        try:
+            return self._container.read_item(item=item_id, partition_key=partition_key)
+        except exceptions.CosmosResourceNotFoundError:
+            raise DatabaseError(f"Item with id '{item_id}' not found.")
+        except exceptions.CosmosHttpResponseError as e:
+            raise DatabaseError(f"Failed to read item '{item_id}': {e.message}") from e
+    ```
+
+    - `upsert_item()`: Inserts or updates a document. Ensures that `id` and `user_id` are present before performing the operation.
+
+    ```python
+    def upsert_item(self, item: dict) -> dict:
+        try:
+            if "id" not in item:
+                item["id"] = str(uuid.uuid4())
+
+            if "user_id" not in item:
+                raise DatabaseError("Missing required field: 'user_id'")
+
+            upserted = self._container.upsert_item(body=item)
+            logging.info(f"Item upserted with id={upserted['id']}")
+            return upserted
+        except exceptions.CosmosHttpResponseError as e:
+            logging.error(f"Failed to upsert item: {e.message}")
+            raise DatabaseError(f"Failed to upsert item: {e.message}") from e
+    ```
+
+    - `delete_item()`: Deletes a document by its `id` and partition key. Logs the deletion attempt and raises a `DatabaseError` if the item does not exist.
+
+    ```python
+    def delete_item(self, item_id: str, partition_key: str) -> None:
+        try:
+            logging.info(f"Attempting to delete item with id={item_id}")
+            self._container.delete_item(item=item_id, partition_key=partition_key)
+        except exceptions.CosmosResourceNotFoundError:
+            raise DatabaseError(f"Item with id '{item_id}' not found, cannot delete.")
+        except exceptions.CosmosHttpResponseError as e:
+            raise DatabaseError(f"Failed to delete item '{item_id}': {e.message}") from e
+    ```
+
+    - `send_query()`: Executes a custom SQL-like query against the container, supporting optional parameters and cross-partition queries. Debug logs include the query and provided parameters.
+
+    ```python
+    def send_query(self, query: str, parameters: list = None) -> list[dict]:
+        if parameters is None:
+            parameters = []
+        try:
+            logging.debug(f"Executing query: {query} | Parameters: {parameters or 'None'}")
+            results = self._container.query_items(
+                query=query,
+                parameters=parameters,
+                enable_cross_partition_query=True
+            )
+            return [item for item in results]
+        except exceptions.CosmosHttpResponseError as e:
+            raise DatabaseError(f"Query failed: {e.message}") from e
+    ```
+
 
 ##### Entities
 This module defines the **core domain entities** of the application.  

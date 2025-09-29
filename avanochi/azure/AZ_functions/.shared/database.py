@@ -1,6 +1,12 @@
 # shared/database.py
+
+import logging
+import uuid
 from azure.cosmos import CosmosClient, PartitionKey, exceptions
 from shared.credential_manager import CredentialManager
+
+# Configure logging globally
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 class DatabaseError(Exception):
     # Custom exception wrapper for all CosmosDB-related errors.
@@ -29,7 +35,7 @@ class CosmosDBService:
         # Ensure the container exists
         self._container = self._database.create_container_if_not_exists(
             id=self._container_name,
-            partition_key=PartitionKey(path="/id"),  # Default partition key
+            partition_key=PartitionKey(path="/id"),  # TODO: change to /user_id in Phase 2 for scalability
             offer_throughput=400
         )
 
@@ -39,16 +45,25 @@ class CosmosDBService:
         return self._container
 
     # ==============================
-    # Generic CRUD operations
+    #    Generic CRUD operations
     # ==============================
 
     def create_item(self, item: dict) -> dict:
-        # Insert a new item into the container.
         try:
-            return self._container.create_item(body=item)
+            # Ensure unique ID
+            if "id" not in item:
+                item["id"] = str(uuid.uuid4())
+
+            if "user_id" not in item:
+                raise DatabaseError("Missing required field: 'user_id'")
+
+            created = self._container.create_item(body=item)
+            logging.info(f"Item created with id={created['id']}")
+            return created
         except exceptions.CosmosHttpResponseError as e:
+            logging.error(f"Failed to create item: {e.message}")
             raise DatabaseError(f"Failed to create item: {e.message}") from e
-        
+
     def read_item(self, item_id: str, partition_key: str) -> dict:
         # Read a single item from the container.
         try:
@@ -59,15 +74,25 @@ class CosmosDBService:
             raise DatabaseError(f"Failed to read item '{item_id}': {e.message}") from e
 
     def upsert_item(self, item: dict) -> dict:
-        # Insert or update an item.
         try:
-            return self._container.upsert_item(body=item)
+            if "id" not in item:
+                item["id"] = str(uuid.uuid4())
+
+            if "user_id" not in item:
+                raise DatabaseError("Missing required field: 'user_id'")
+
+            upserted = self._container.upsert_item(body=item)
+            logging.info(f"Item upserted with id={upserted['id']}")
+            return upserted
         except exceptions.CosmosHttpResponseError as e:
+            logging.error(f"Failed to upsert item: {e.message}")
             raise DatabaseError(f"Failed to upsert item: {e.message}") from e
+
 
     def delete_item(self, item_id: str, partition_key: str) -> None:
         # Delete an item by id.
         try:
+            logging.info(f"Attempting to delete item with id={item_id}")
             self._container.delete_item(item=item_id, partition_key=partition_key)
         except exceptions.CosmosResourceNotFoundError:
             raise DatabaseError(f"Item with id '{item_id}' not found, cannot delete.")
@@ -79,6 +104,7 @@ class CosmosDBService:
         if parameters is None:
             parameters = []
         try:
+            logging.debug(f"Executing query: {query} | Parameters: {parameters or 'None'}")
             results = self._container.query_items(
                 query=query,
                 parameters=parameters,
