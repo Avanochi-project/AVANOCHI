@@ -8,6 +8,7 @@
 # Table of Contents
 
 - [Introduction](#introduction)
+  - [Purpose of the project](#purpose-of-the-project)
 - [1. General Architecture: Azure serverless service](#1-general-architecture-azure-serverless-service)
   - [1.1 AZ_functions directory](#11-az_functions-directory)
     - [1.1.1 Service strucures](#service-structures)
@@ -23,7 +24,28 @@
 
 # Introduction
 
-this is the official documentation of the [AVANOCHI](https://github.com/Avanochi-project/AVANOCHI) project. every code involved will be explained here
+This is the official documentation of the [AVANOCHI](https://github.com/Avanochi-project/AVANOCHI) project. Every code and architectural decision involved will be explained here in detail.  
+
+**AVANOCHI** is a productivity application with a playful and gamified approach, designed to enhance **time management**, **work performance**, and **well-being** during the workday. The project introduces a virtual companion — a “productive tamagotchi” — that not only motivates employees but also assists in organizing tasks, tracking performance, and promoting healthy work habits.  
+
+At its core, AVANOCHI bridges **task management**, **behavioral gamification**, and **AI-powered insights** to create an engaging system that goes beyond traditional productivity tools. Unlike conventional task trackers, AVANOCHI establishes an emotional connection with the user: the character reacts to the employee’s actions, encourages breaks, and evolves alongside the worker’s performance. This interaction transforms daily work into a dynamic and rewarding experience, increasing motivation while reducing stress and fatigue.  
+
+The platform is designed with **modularity** and **scalability** in mind, leveraging modern cloud resources and AI-driven features. It integrates with Microsoft Azure services for data storage, analytics, AI recommendations, and voice/chat interaction. This ensures that the system not only adapts to individual needs but also continuously improves through **machine learning and data-driven feedback**.  
+
+## Purpose of the project
+
+The main goal of AVANOCHI is to support employees in achieving higher productivity while maintaining a healthy work-life balance. To accomplish this, the system:  
+
+- Encourages **organization** through daily and weekly task management.  
+- Provides **real-time performance tracking** and visual statistics.  
+- Promotes **healthy habits** such as hydration, breaks, and proper lunch times.  
+- Uses **gamification elements** (achievements, rewards, character evolution) to increase engagement.  
+- Offers **personalized recommendations** powered by AI, adapting to each employee’s work rhythm.  
+- Predicts risks of **work overload and burnout**, sending alerts before they happen.  
+- Extends productivity beyond the app itself with **multichannel integration** (Teams, Slack, voice assistant).  
+
+In summary, AVANOCHI is not just a productivity app, but a **digital companion** that combines technology, gamification, and well-being to redefine the way employees interact with their workday.  
+
 
 <div class="page-break"></div>
 
