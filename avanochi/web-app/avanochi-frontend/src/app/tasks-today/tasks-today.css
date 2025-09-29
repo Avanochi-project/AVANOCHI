@@ -1,3 +1,111 @@
+.timer-label {
+	display: inline-block;
+	margin-top: 8px;
+	font-size: 1.15rem;
+	color: #d25b01;
+	font-weight: bold;
+}
+.timer-value {
+	background: #fff3e0;
+	color: #b85c00;
+	border-radius: 8px;
+	padding: 4px 12px;
+	font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+	font-size: 1.15rem;
+	margin-left: 8px;
+	box-shadow: 0 2px 8px rgba(210,91,1,0.08);
+}
+/* Bloque para agrupar avatar y saludo en una sola fila */
+.avatar-block {
+	display: flex;
+	align-items: center;
+	gap: 24px;
+	margin-bottom: 12px;
+}
+/* Vista previa de estadísticas del usuario */
+.user-stats-preview {
+	margin-top: 38px;
+	margin-left: 8px;
+		background: #fff;
+		border-radius: 14px;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+		padding: 18px 22px;
+			min-width: 260px;
+			min-height: 180px;
+		font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+		border: 3px solid #ffb300;
+}
+.user-stats-preview h3 {
+	font-size: 1.15rem;
+	color: #d25b01;
+	margin-bottom: 10px;
+	font-weight: bold;
+}
+.user-stats-preview ul {
+	list-style: none;
+	padding: 0;
+	margin: 0 0 10px 0;
+}
+.user-stats-preview li {
+	font-size: 1rem;
+	color: #333;
+	margin-bottom: 6px;
+}
+ .user-stats-preview .stats-link {
+	display: block;
+	font-size: 0.98rem;
+	background: #d25b01;
+	color: white;
+	font-weight: 600;
+	border: none;
+	border-radius: 6px;
+	padding: 7px 14px;
+	box-shadow: 0 2px 8px rgba(210,91,1,0.10);
+	transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+	cursor: pointer;
+	margin: 18px auto 0 auto;
+	text-align: center;
+	width: fit-content;
+	text-decoration: none;
+}
+ .user-stats-preview .stats-link:hover {
+		background: #f59a25;
+		color: #fff;
+		box-shadow: 0 4px 16px rgba(245,154,37,0.18);
+ }
+/* Texto de saludo junto al avatar */
+.avatar-greeting {
+	display: flex;
+	align-items: center;
+	margin-top: 32px;
+	margin-left: 8px;
+}
+.greeting-text {
+	font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+	font-size: 1.5rem;
+	color: #000;
+	font-weight: bold;
+	background: #fff3e0;
+	padding: 10px 22px;
+	border-radius: 12px;
+	box-shadow: 0 2px 8px rgba(210,91,1,0.08);
+}
+/* Contenedor principal alineado a la izquierda con avatar */
+.tasks-today-container {
+	display: flex;
+	align-items: flex-start;
+	gap: 32px;
+	justify-content: flex-start;
+}
+
+/* Imagen del avatar */
+.avatar-img {
+	width: 150px;
+	height: 150pxpx;
+	object-fit: cover;
+	margin-top: 24px;
+	margin-left: 12px;
+}
 .task-card { /* Usa el CSS global para mantener el diseño */ }
 /* --- Modern Reset para el bloque de tareas de hoy (igual que ayer) --- */
 .task-card-today {
@@ -5,11 +113,8 @@
 	color: #b85c00 !important;
 	border: 3px solid #ffb300 !important;
 	font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif !important;
-	display: flex;
 	flex-direction: column;
 	justify-content: flex-start;
-	align-items: center;
-	text-align: center;
 	padding: 24px 20px 20px 20px;
 	border-radius: 18px;
 	width: 420px;
@@ -20,19 +125,36 @@
 	box-shadow: 0 6px 24px rgba(255,179,0,0.10), 0 1.5px 4px rgba(0,0,0,0.08);
 }
 .task-card-today .delete-btn {
-	background: #ff5252;
-	color: #fff;
-	border: none;
-	font-size: 0.98rem;
-	border-radius: 6px;
-	padding: 4px 12px;
-	cursor: pointer;
-	font-weight: 600;
-	transition: background 0.2s, color 0.2s;
+		background: #ff5252;
+		border: none;
+		border-radius: 50%;
+		width: 32px;
+		height: 32px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		margin-left: 8px;
+		transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+		box-shadow: 0 2px 8px rgba(255,82,82,0.10);
 }
 .task-card-today .delete-btn:hover {
-	background: #b71c1c;
+		background: #b71c1c;
+		transform: scale(1.15);
+		box-shadow: 0 0 0 4px rgba(183,28,28,0.18), 0 4px 16px rgba(183,28,28,0.18);
+}
+.task-card-today .delete-x {
 	color: #fff;
+	font-size: 2rem;
+	font-weight: bold;
+	line-height: 1;
+	pointer-events: none;
+	user-select: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
 }
 .task-card-today h2 {
 	font-size: 1.3rem;
@@ -46,21 +168,25 @@
 	gap: 8px;
 	margin-bottom: 14px;
 }
+/* Animación para el input de tareas */
 .task-card-today input[type="text"] {
 	flex: 1;
 	padding: 8px 10px;
 	border-radius: 6px;
-	border: 2px solid #bbdefb;
+	border: 2px solid #bdbdbd;
 	font-size: 1rem;
-	color: #1976d2;
-	background: #e3f0ff;
+	color: #555;
+	background: #f5f5f5;
 	outline: none;
-	transition: border-color 0.2s, box-shadow 0.2s;
-	box-shadow: 0 1px 4px rgba(25,118,210,0.08);
+	transition: border-color 0.3s, box-shadow 0.3s, background 0.3s, transform 0.4s;
+	box-shadow: 0 1px 4px rgba(189,189,189,0.08);
 }
 .task-card-today input[type="text"]:focus {
-	border-color: #1976d2;
-	box-shadow: 0 2px 8px rgba(25,118,210,0.15);
+	border-color: #d25b01;
+	background: #fff3e0;
+	color: #d25b01;
+	box-shadow: 0 4px 16px rgba(210,91,1,0.18);
+	transform: scale(1.01);
 }
 .task-card-today button {
 	background: #d25b01;
@@ -109,7 +235,7 @@
 	border-bottom: none;
 }
 .task-card-today input[type="checkbox"] {
-	accent-color: #1976d2;
+	accent-color: #72b015;
 	width: 20px;
 	height: 20px;
 	margin-right: 10px;
