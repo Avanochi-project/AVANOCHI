@@ -14,6 +14,46 @@ interface Task {
   imports: [CommonModule]
 })
 export class TasksToday {
+  jornadaInicio = signal<string | null>(null);
+  jornadaFin = signal<string | null>(null);
+  timer = signal<string>('00:00:00');
+  timerInterval: any = null;
+
+  registrarInicio() {
+    const ahora = new Date();
+    this.jornadaInicio.set(ahora.toLocaleTimeString());
+    this.jornadaFin.set(null);
+    this.startTimer();
+  }
+
+  registrarFin() {
+    const ahora = new Date();
+    this.jornadaFin.set(ahora.toLocaleTimeString());
+    this.stopTimer();
+  }
+
+  startTimer() {
+    if (this.timerInterval) clearInterval(this.timerInterval);
+    const start = new Date();
+    this.timerInterval = setInterval(() => {
+      const now = new Date();
+      const inicio = this.jornadaInicio();
+      if (!inicio) return;
+      const [h, m, s] = inicio.split(":");
+      const startDate = new Date();
+      startDate.setHours(Number(h), Number(m), Number(s), 0);
+      const diff = now.getTime() - startDate.getTime();
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      this.timer.set(`${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`);
+    }, 1000);
+  }
+
+  stopTimer() {
+    if (this.timerInterval) clearInterval(this.timerInterval);
+    this.timerInterval = null;
+  }
   tasks = signal<Task[]>([]);
   newTask = signal('');
 

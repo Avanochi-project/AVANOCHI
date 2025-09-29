@@ -1,14 +1,46 @@
-<div class="task-card task-card-today">
-  <h2>TAREAS DE HOY</h2>
-  <form (submit)="$event.preventDefault(); addTask()">
-    <input type="text" [value]="newTask()" (input)="newTask.set($event.target.value)" placeholder="Nueva tarea..." />
-    <button type="submit">Añadir</button>
-  </form>
-  <ul>
-    <li *ngFor="let task of tasks(); let i = index">
-      <input type="checkbox" [checked]="task.done" (change)="toggleDone(i)" />
-      <span [style.textDecoration]="task.done ? 'line-through' : 'none'">{{ task.title }}</span>
-      <button class="delete-btn" (click)="deleteTask(i)">🗑️</button>
-    </li>
-  </ul>
+<div class="tasks-today-container">
+  <div class="avatar-stats-group">
+    <!-- Avatar y saludo solo una vez -->
+    <div class="avatar-block">
+      <img src="avanochi_avatar.png" alt="Avatar" class="avatar-img">
+      <div class="avatar-greeting">
+        <span class="greeting-text">¡Hola X! Bienvenid@, vamos a trabajar! 🌟 </span>
+      </div>
+    </div>
+    <div class="jornada-block">
+      <button (click)="registrarInicio()" [disabled]="jornadaInicio()">Iniciar jornada</button>
+      <button (click)="registrarFin()" [disabled]="!jornadaInicio() || jornadaFin()">Finalizar jornada</button>
+      <div class="jornada-info">
+        <span *ngIf="jornadaInicio()"><strong>Inicio:</strong> {{ jornadaInicio() }}</span>
+        <span *ngIf="jornadaFin()"><strong>Fin:</strong> {{ jornadaFin() }}</span>
+        <span *ngIf="jornadaInicio() && !jornadaFin()" class="timer-label"><strong>Tiempo actual:</strong> <span class="timer-value">{{ timer() }}</span></span>
+      </div>
+    </div>
+    <div class="user-stats-preview">
+      <h3>Estadísticas de tu última semana</h3>
+      <ul>
+        <li><strong>Tareas completadas:</strong> 12</li>
+        <li><strong>Tareas pendientes:</strong> 3</li>
+        <li><strong>Días productivos:</strong> 5</li>
+        <li><strong>Mejor día:</strong> Jueves</li>
+      </ul>
+      <a href="#" class="stats-link">Ver estadísticas completas</a>
+    </div>
+  </div>
+  <div class="task-card task-card-today">
+    <h2>TAREAS DE HOY</h2>
+    <form (submit)="$event.preventDefault(); addTask()">
+      <input type="text" [value]="newTask()" (input)="newTask.set($event.target.value)" placeholder="Nueva tarea..." />
+      <button type="submit">Añadir</button>
+    </form>
+    <ul>
+      <li *ngFor="let task of tasks(); let i = index">
+        <input type="checkbox" [checked]="task.done" (change)="toggleDone(i)" />
+        <span [style.textDecoration]="task.done ? 'line-through' : 'none'">{{ task.title }}</span>
+        <button class="delete-btn" (click)="deleteTask(i)" aria-label="Eliminar tarea">
+          <span class="delete-x">×</span>
+        </button>
+      </li>
+    </ul>
+  </div>
 </div>
