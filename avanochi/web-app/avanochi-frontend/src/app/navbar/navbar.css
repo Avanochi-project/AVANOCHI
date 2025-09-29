@@ -1,10 +1,21 @@
-.navbar {
+.navbar-left {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 12px 24px;
-  background-color: #d25b01; /* Naranja base */
-  color: white;
+  gap: 12px;
+}
+
+.avatar-icon {
+  height: 40px;
+  width: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 8px;
+}
+
+.logo-icon {
+  height: 48px;
+  width: 48px;
+  object-fit: contain;
 }
 
 .logo {
@@ -12,7 +23,6 @@
   font-weight: bold;
   letter-spacing: 2px;
 }
-
 
 .navbar {
   display: flex;
