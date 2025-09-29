@@ -169,8 +169,6 @@
 	margin-top: 24px;
 	margin-left: 12px;
 }
-.task-card { /* Usa el CSS global para mantener el diseño */ }
-/* --- Modern Reset para el bloque de tareas de hoy (igual que ayer) --- */
 .task-card-today {
 	flex: 1;
 	align-self: stretch;
