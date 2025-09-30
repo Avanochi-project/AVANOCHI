@@ -1,4 +1,12 @@
 # ================================
+#   Create Azure Resource Group
+# ================================
+
+az group create \
+  --name avanochi-rg \
+  --location spaincentral
+
+# ================================
 #   Deploy Azure Storage Account
 # ================================
 
@@ -14,9 +22,9 @@ az storage account create \
 
 az functionapp create \
   --resource-group avanochi-rg \
-  --consumption-plan-location spaincentral \
+  --consumption-plan-location westeurope \
   --runtime python \
-  --runtime-version 3.9 \
+  --runtime-version 3.13 \
   --functions-version 4 \
   --name avanochi-funcapp \
   --storage-account avanochistorage \
@@ -51,7 +59,7 @@ az cosmosdb sql container create \
 # ======================================
 
 COSMOS_CONN=$(az cosmosdb keys list \
-  --name avanochi-cosmos \
+  --name avanochi-cosmosdb \
   --resource-group avanochi-rg \
   --type connection-strings \
   --query "connectionStrings[0].connectionString" \

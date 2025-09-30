@@ -49,7 +49,7 @@ In summary, AVANOCHI is not just a productivity app, but a **digital companion**
 
 <div class="page-break"></div>
 
-# 1. General Architecture: Azure serverless service 
+# 1. General Architecture: Azure Functions
 
 Avanochi is built on a **serverless architecture** using Microsoft Azure Functions. This approach was chosen to ensure scalability, modularity, and cost efficiency. Instead of relying on a traditional web server that requires continuous maintenance and resource allocation, serverless functions allow us to run code only when specific events are triggered. This event-driven model aligns perfectly with Avanochi’s needs, where different modules—such as task tracking, AI recommendations, and health reminders—can operate independently without interfering with each other.  
 
@@ -90,7 +90,7 @@ Such organization simplifies both development and testing by isolating functiona
     - This module feeds most of the gamification system, unlocking achievements and performance insights.
 
 - Configuration files
-    - `host.json` and `local.settings.json` define the runtime enviroment and local development setup.
+    - `host.json` and `local.settings.json` define the runtime environment and local development setup.
     - Ensure consistency between cloud deployment and local testing
 
 - `templates/`
@@ -854,3 +854,93 @@ All logic is orchestrated by the `WorkSessionService` and `TaskService`, which i
                 return _json_response({"error": str(e)}, 500)
     ```
 
+
+## 1.2 Azure Functions Testing
+
+Before deploying to Azure, it's essential to validate the structure and behavior of our Azure Functions locally. This section outlines the testing setup used in the project, including centralized function routing via the Python v2 programming model, environment configuration, and secure credential management. By replicating the Azure Functions runtime locally, we ensure that all endpoints behave as expected and that external dependencies—such as Cosmos DB—are properly initialized prior to production deployment.
+
+To start the local runtime, use the following command:
+
+```bash
+func start
+
+# for verbose error output
+func start --verbose
+```
+
+### 1.2.1 `function_app.py`: central endpoint manager
+
+In order to test the project before deploying it to Azure Functions we will need a new file named `function_app.py`. This is due to the fact that Azure functions can only read files one level under the root directory, so we will need to centralize all the project endpoints in a single file that will reference them:
+
+```python
+# function_app.py
+import azure.functions as func
+from work.work_sessions import main as work_sessions_main
+from work.tasks import main as tasks_main
+from work.stats import main as stats_main
+
+app = func.FunctionApp()
+
+@app.function_name(name="WorkSessions")
+@app.route(route="work_sessions/{*route}", methods=["GET", "POST"])
+def work_sessions(req: func.HttpRequest) -> func.HttpResponse:
+    return work_sessions_main(req)
+
+@app.function_name(name="Tasks")
+@app.route(route="tasks/{id?}", methods=["GET", "POST", "PATCH"])
+def tasks(req: func.HttpRequest) -> func.HttpResponse:
+    return tasks_main(req)
+
+@app.function_name(name="Stats")
+@app.route(route="stats/{user_id}", methods=["GET"])
+def stats(req: func.HttpRequest) -> func.HttpResponse:
+    return stats_main(req)
+```
+This code is from the **first phase** of the proyect, so it only includes 3 endpoints.
+
+### 1.2.2 Virtual environment
+
+To avoid conflicts, we will create a virtual environment exclusively for this testing environment, as it is mandatory for Azure to use **Python 3.10** as python 3.11 is not supported yet.
+For this, we will use the following commands (Linux):
+
+```bash
+python -m venv azfunc310
+source azfunc310/bin/activate  # or .\azfunc310\Scripts\activate on Windows
+```
+After that, we need the dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Make sure `requirements.txt` includes the following packages:
+
+```bash
+azure-functions
+python-dotenv
+azure-cosmos
+```
+
+### 1.2.3 Enviroment Variables
+
+and the `.env` file that will manage all the credentials in `_shared/credential_manager.py`
+
+```bash
+# =======================
+#   Resource group name
+# =======================
+
+RESOURCE_GROUP=avanochi-rg
+LOCATION=eastus
+
+# =======================
+#       Cosmos DB
+# =======================
+
+COSMOS_DB_ACCOUNT=avanochi-cosmosdb
+COSMOS_DB_DATABASE=avanochi-db
+COSMOS_DB_CONTAINER=avanochi-container
+
+COSMOS_DB_URI=https://avanochi-cosmosdb.documents.azure.com:443/
+COSMOS_DB_PRIMARY_KEY=[SECRET]
+```
