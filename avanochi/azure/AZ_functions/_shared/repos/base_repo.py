@@ -1,7 +1,7 @@
 # repos/base_repo.py
 
 from abc import ABC, abstractmethod
-from shared.database import CosmosDBService, DatabaseError
+from _shared.database import CosmosDBService, DatabaseError
 
 
 class BaseRepository(ABC):

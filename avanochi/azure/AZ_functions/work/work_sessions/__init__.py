@@ -11,11 +11,11 @@ import json
 import logging
 import azure.functions as func
 
-from shared.credential_manager import CredentialManager
-from shared.database import CosmosDBService, DatabaseError
-from shared.repos.work_session_repository import WorkSessionRepository
-from shared.services.work_session_service import WorkSessionService
-from shared.entities.work_session import WorkSession
+from _shared.credential_manager import CredentialManager
+from _shared.database import CosmosDBService, DatabaseError
+from _shared.repos.work_session_repository import WorkSessionRepository
+from _shared.services.work_session_service import WorkSessionService
+from _shared.entities.work_session import WorkSession
 
 
 # Initialize dependencies (reused across invocations)

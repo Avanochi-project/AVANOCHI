@@ -1,7 +1,7 @@
 # shared/services/user_service.py
-from shared.services.base_service import BaseService
-from shared.repos.user_repository import UserRepository
-from shared.entities.user import User
+from _shared.services.base_service import BaseService
+from _shared.repos.user_repository import UserRepository
+from _shared.entities.user import User
 
 
 class UserService(BaseService):
