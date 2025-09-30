@@ -1,11 +1,7 @@
 {
-    "IsEncrypted": false,
-    "Values": {
-        "FUNCTIONS_WORKER_RUNTIME": "python",
-        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-        "COSMOS_DB_URI": "https://<your-cosmos-account>.documents.azure.com:443/",
-        "COSMOS_DB_PRIMARY_KEY": "<your-cosmos-key>",
-        "COSMOS_DB_DATABASE": "avanochi_db",
-        "COSMOS_DB_CONTAINER": "Tasks"
-    }
+  "IsEncrypted": true,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "CfDJ8CXlLIUWMRFJgluselmv1BEQOE2DFzm358fPDGSpEaKjD41ks8TC5P9JIKQlUrFxr7jlWg6BHS0xxRN3O4226145qNWqTMErEK2LFVIPnTLyFFCqn3aH/N3l/OwdT1QVfw=="
+  },
+  "ConnectionStrings": {}
 }

@@ -13,7 +13,7 @@ import azure.functions as func
 
 from _shared.credential_manager import CredentialManager
 from _shared.database import CosmosDBService, DatabaseError
-from _shared.repos.work_session_repository import WorkSessionRepository
+from _shared.repos.work_session_repo import WorkSessionRepository
 from _shared.services.work_session_service import WorkSessionService
 from _shared.entities.work_session import WorkSession
 

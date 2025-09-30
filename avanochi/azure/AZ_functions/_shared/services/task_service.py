@@ -1,6 +1,6 @@
 # shared/services/task_service.py
 from _shared.services.base_service import BaseService
-from _shared.repos.task_repository import TaskRepository
+from _shared.repos.task_repo import TaskRepository
 from _shared.entities.task import Task
 
 
