@@ -3,7 +3,7 @@
 import logging
 import uuid
 from azure.cosmos import CosmosClient, PartitionKey, exceptions
-from shared.credential_manager import CredentialManager
+from _shared.credential_manager import CredentialManager
 
 # Configure logging globally
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")

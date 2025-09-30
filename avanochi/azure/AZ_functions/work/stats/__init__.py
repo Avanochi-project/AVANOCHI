@@ -9,10 +9,10 @@ import json
 import logging
 import azure.functions as func
 
-from shared.credential_manager import CredentialManager
-from shared.database import CosmosDBService, DatabaseError
-from shared.repos.task_repo import TaskRepository
-from shared.repos.work_session_repository import WorkSessionRepository
+from _shared.credential_manager import CredentialManager
+from _shared.database import CosmosDBService, DatabaseError
+from _shared.repos.task_repo import TaskRepository
+from _shared.repos.work_session_repository import WorkSessionRepository
 
 
 # Initialize dependencies

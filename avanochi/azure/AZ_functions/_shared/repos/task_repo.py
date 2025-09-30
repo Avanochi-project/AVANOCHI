@@ -1,7 +1,7 @@
 # shared/repos/task_repo.py
 
-from shared.repos.base_repo import BaseRepository
-from shared.entities import Task
+from _shared.repos.base_repo import BaseRepository
+from _shared.entities import Task
 
 class TaskRepository(BaseRepository):
     # Repository for managing Task entities in Cosmos DB

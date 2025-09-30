@@ -1,7 +1,7 @@
 # shared/repos/user_repo.py
 
-from shared.repos.base_repo import BaseRepository
-from shared.entities import User
+from _shared.repos.base_repo import BaseRepository
+from _shared.entities import User
 
 class UserRepository(BaseRepository):
     # Repository for managing User entities in Cosmos DB

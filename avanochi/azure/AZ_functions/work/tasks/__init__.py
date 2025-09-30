@@ -14,11 +14,11 @@ from datetime import datetime
 import azure.functions as func
 
 # Infrastructure / domain imports (English code + comments)
-from shared.credential_manager import CredentialManager
-from shared.database import CosmosDBService, DatabaseError
-from shared.repos.task_repo import TaskRepository
-from shared.services.task_service import TaskService
-from shared.entities.task import Task
+from _shared.credential_manager import CredentialManager
+from _shared.database import CosmosDBService, DatabaseError
+from _shared.repos.task_repo import TaskRepository
+from _shared.services.task_service import TaskService
+from _shared.entities.task import Task
 
 
 # Module-level initialization to reuse clients across invocations when possible.

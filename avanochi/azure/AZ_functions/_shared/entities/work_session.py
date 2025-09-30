@@ -2,7 +2,6 @@
 from datetime import datetime
 import uuid
 
-
 class WorkSession:
     # Domain entity representing a working session of a user
 

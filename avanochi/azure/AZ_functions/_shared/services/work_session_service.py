@@ -1,7 +1,7 @@
 # shared/services/work_session_service.py
-from shared.services.base_service import BaseService
-from shared.repos.work_session_repository import WorkSessionRepository
-from shared.entities.work_session import WorkSession
+from _shared.services.base_service import BaseService
+from _shared.repos.work_session_repository import WorkSessionRepository
+from _shared.entities.work_session import WorkSession
 
 
 class WorkSessionService(BaseService):
