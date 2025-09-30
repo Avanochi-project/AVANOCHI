@@ -7,18 +7,27 @@
 
 # Table of Contents
 
+- [Table of Contents](#table-of-contents)
 - [Introduction](#introduction)
-  - [Purpose of the project](#purpose-of-the-project)
-- [1. General Architecture: Azure serverless service](#1-general-architecture-azure-serverless-service)
-  - [1.1 AZ_functions directory](#11-az_functions-directory)
-    - [1.1.1 Service strucures](#service-structures)
-    - [1.1.2 Structure Overview](#structure-overview)
-      - [Shared Architecture](#shared-architecture)
-        - [Credential Manager](#credential-manager)
-        - [Database: CosmosDB](#database-cosmosdb)
-        - [Entities](#entities)
-        - [Repositories](#repositories)
-        - [Services](#services)
+    - [Purpose of the project](#purpose-of-the-project)
+- [1. General Architecture: Azure Functions](#1-general-architecture-azure-functions)
+    - [1.1 AZ_functions directory](#11-az_functions-directory)
+        - [1.1.1 Structure Overview](#111-structure-overview)
+            - [`.shared` Architecture](#shared-architecture)
+                - [Credential Manager](#credential-manager)
+                - [Database: CosmosDB](#database-cosmosdb)
+                - [Entities](#entities)
+                - [Repositories](#repositories)
+                - [Services](#services)
+            - [`work` Directory](#work-directory)
+                - [Tasks Endpoint](#tasks-endpoint)
+                - [WorkSessions Endpoint](#worksessions-endpoint)
+                - [Stats Endpoint](#stats-endpoint)
+    - [1.2 Azure Functions Testing](#12-azure-functions-testing)
+        - [1.2.1 `function_app.py`: central endpoint manager](#121-function_apppy-central-endpoint-manager)
+        - [1.2.2 Virtual environment](#122-virtual-environment)
+        - [1.2.3 Enviroment Variables](#123-enviroment-variables)
+        - [1.2.4 Final testing](#124-final-testing)
 
 <div class="page-break"></div>
 
@@ -854,6 +863,7 @@ All logic is orchestrated by the `WorkSessionService` and `TaskService`, which i
                 return _json_response({"error": str(e)}, 500)
     ```
 
+<div class="page-break"></div>
 
 ## 1.2 Azure Functions Testing
 
@@ -944,3 +954,35 @@ COSMOS_DB_CONTAINER=avanochi-container
 COSMOS_DB_URI=https://avanochi-cosmosdb.documents.azure.com:443/
 COSMOS_DB_PRIMARY_KEY=[SECRET]
 ```
+
+### 1.2.4 Final testing
+
+After doing all the previous configuration, testing in the local enviroment should work out perfectly, giving us the following output:
+
+```bash
+(base) mike@AVAPC-083306703:/mnt/c/Users/mike.maranon/Desktop/codes/AVANOCHI$ cd avanochi/azure/AZ_functions/
+(base) mike@AVAPC-083306703:/mnt/c/Users/mike.maranon/Desktop/codes/AVANOCHI/avanochi/azure/AZ_functions$ conda activate azfunc310
+(azfunc310) mike@AVAPC-083306703:/mnt/c/Users/mike.maranon/Desktop/codes/AVANOCHI/avanochi/azure/AZ_functions$ func start
+Found Python version 3.10.18 (python3).
+You are running a preview version of Azure Functions Core Tools.
+
+
+Azure Functions Core Tools
+Core Tools Version:       4.3.0-preview1+364f397008ae6956181a0f9fb738ef20924ac389 (64-bit)
+Function Runtime Version: 4.1041.200.25360
+
+[2025-09-30T13:15:14.524Z] Worker process started and initialized.
+
+Functions:
+
+        Stats: [GET] http://localhost:7071/api/stats/{user_id}
+
+        Tasks: [GET,POST,PATCH] http://localhost:7071/api/tasks/{id?}
+
+        WorkSessions: [GET,POST] http://localhost:7071/api/work_sessions/{*route}
+
+For detailed output, run func with --verbose flag.
+[2025-09-30T13:15:16.081Z] Host lock lease acquired by instance ID '0000000000000000000000003E9803A7'.
+```
+
+As we can see, we have the three exposed endpoints with their required input data such as `{user_id}` for `stats`
