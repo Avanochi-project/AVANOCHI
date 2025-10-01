@@ -1,19 +1,34 @@
+#!/usr/bin/env bash
+
+# ================================
+#   Configuration Variables
+# ================================
+
+RESOURCE_GROUP="avanochi-rg"
+LOCATION="spaincentral"
+STORAGE_ACCOUNT="avanochistorage"
+FUNCTION_APP="avanochi-funcapp"
+COSMOS_ACCOUNT="avanochi-cosmosdb"
+COSMOS_DB="avanochi-db"
+COSMOS_CONTAINER="avanochi-container"
+PLAN_LOCATION="westeurope"   # region for function consumption plan
+
 # ================================
 #   Create Azure Resource Group
 # ================================
 
 az group create \
-  --name avanochi-rg \
-  --location spaincentral
+  --name $RESOURCE_GROUP \
+  --location $LOCATION
 
 # ================================
 #   Deploy Azure Storage Account
 # ================================
 
 az storage account create \
-  --name avanochistorage \
-  --location spaincentral \
-  --resource-group avanochi-rg \
+  --name $STORAGE_ACCOUNT \
+  --location $LOCATION \
+  --resource-group $RESOURCE_GROUP \
   --sku Standard_LRS
 
 # ================================
@@ -21,60 +36,74 @@ az storage account create \
 # ================================
 
 az functionapp create \
-  --resource-group avanochi-rg \
-  --consumption-plan-location westeurope \
+  --resource-group $RESOURCE_GROUP \
+  --consumption-plan-location $PLAN_LOCATION \
   --runtime python \
   --runtime-version 3.10 \
   --functions-version 4 \
-  --name avanochi-funcapp \
-  --storage-account avanochistorage \
+  --name $FUNCTION_APP \
+  --storage-account $STORAGE_ACCOUNT \
   --os-type linux
 
 az functionapp config appsettings set \
-  --name avanochi-funcapp \
-  --resource-group avanochi-rg \
+  --name $FUNCTION_APP \
+  --resource-group $RESOURCE_GROUP \
   --settings "AzureWebJobsFeatureFlags=EnableWorkerIndexing"
 
 az functionapp restart \
-  --name avanochi-funcapp \
-  --resource-group avanochi-rg
+  --name $FUNCTION_APP \
+  --resource-group $RESOURCE_GROUP
 
 # ================================
 #   Deploy Azure Cosmos DB
 # ================================
 
 az cosmosdb create \
-  --name avanochi-cosmosdb \
-  --resource-group avanochi-rg \
+  --name $COSMOS_ACCOUNT \
+  --resource-group $RESOURCE_GROUP \
   --kind GlobalDocumentDB \
-  --locations regionName=spaincentral failoverPriority=0 isZoneRedundant=False
+  --locations regionName=$LOCATION failoverPriority=0 isZoneRedundant=False
 
 # Create SQL database
 az cosmosdb sql database create \
-  --account-name avanochi-cosmosdb \
-  --name avanochi-db \
-  --resource-group avanochi-rg
+  --account-name $COSMOS_ACCOUNT \
+  --name $COSMOS_DB \
+  --resource-group $RESOURCE_GROUP
 
 # Create container
 az cosmosdb sql container create \
-  --account-name avanochi-cosmosdb \
-  --database-name avanochi-db \
-  --name avanochi-container \
+  --account-name $COSMOS_ACCOUNT \
+  --database-name $COSMOS_DB \
+  --name $COSMOS_CONTAINER \
   --partition-key-path "/user_id" \
-  --resource-group avanochi-rg
+  --resource-group $RESOURCE_GROUP
 
 # ======================================
-#   Connection string for Funciton App
+#   Extract Cosmos DB credentials
 # ======================================
 
-COSMOS_CONN=$(az cosmosdb keys list \
-  --name avanochi-cosmosdb \
-  --resource-group avanochi-rg \
-  --type connection-strings \
-  --query "connectionStrings[0].connectionString" \
+COSMOS_DB_URI=$(az cosmosdb show \
+  --name $COSMOS_ACCOUNT \
+  --resource-group $RESOURCE_GROUP \
+  --query "documentEndpoint" \
   -o tsv)
 
+COSMOS_DB_PRIMARY_KEY=$(az cosmosdb keys list \
+  --name $COSMOS_ACCOUNT \
+  --resource-group $RESOURCE_GROUP \
+  --type keys \
+  --query "primaryMasterKey" \
+  -o tsv)
+
+# ===============================================
+#   Inject Cosmos DB settings into Function App
+# ===============================================
+
 az functionapp config appsettings set \
-  --resource-group avanochi-rg \
-  --name avanochi-funcapp \
-  --settings "COSMOSDB_CONNECTION_STRING=$COSMOS_CONN"
+  --resource-group $RESOURCE_GROUP \
+  --name $FUNCTION_APP \
+  --settings \
+  COSMOS_DB_URI=$COSMOS_DB_URI \
+  COSMOS_DB_PRIMARY_KEY=$COSMOS_DB_PRIMARY_KEY \
+  COSMOS_DB_DATABASE=$COSMOS_DB \
+  COSMOS_DB_CONTAINER=$COSMOS_CONTAINER
