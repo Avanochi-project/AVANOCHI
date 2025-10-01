@@ -75,6 +75,7 @@ Such organization simplifies both development and testing by isolating functiona
     - init.py: Marks the package as importable and optionally exposes shared interfaces.
     - `credential_manager.py`: Handles secure authentication and credential rotation.
     - `database.py`: Defines the database connection layer and abstracts CRUD operations.
+    - `auth_manager.py`: Encapsulates JWT generation and validation. It isolates token logic (signing, verification, expiration) from higher layers.
     - `entities/`: Declares data models and schemas used across functions.
     - `repos/`: Implements the repository pattern, linking entities with database logic.
     - `services/`: Provides high-level services that orchestrate business logic and integrations.
@@ -269,6 +270,55 @@ This approach ensures that the service can start even if Cosmos DB is temporaril
             raise DatabaseError(f"Query failed: {e.message}") from e
     ```
 
+##### Authentication Manager
+This module is responsible for handling all operations related to user authentication and authorization through **JSON Web Tokens (JWT)**. It centralizes token management, ensuring that identity handling is secure, consistent, and independent from higher-level services.
+The `AuthManager` class abstracts the complexity of token creation and validation, isolating cryptographic logic from business workflows.
+By depending exclusively on environment variables for its secret key and expiration settings, this class adheres to the Single Responsibility Principle, keeping configuration and token logic decoupled from authentication services. This design guarantees scalability, maintainability, and secure usage of environment-based secrets.
+
+The main responsibilities can be divided into the following components:
+
+- **Initialization(`__init__`)**: The constructor loads the JWT secret and configuration (expiration time, algorithm) from environment variables.
+    This guarantees that sensitive values are never hardcoded in the codebase and can be rotated without modifying logic.
+
+    ```python
+    def __init__(self):
+        self.secret = os.getenv("JWT_SECRET", "dev-secret")
+        self.algorithm = "HS256"
+        self.exp_minutes = int(os.getenv("JWT_EXP_MINUTES", "60"))
+    ```
+
+- **Token generation(`generate_token`)**: Creates a signed JWT embedding the user identity and expiration claims.
+    The payload always includes a `sub` (subject, user id), `iat` (issued at), and `exp` (expiration).
+
+    ```python
+    def generate_token(self, user_id: str) -> str:
+        now = datetime.datetime.utcnow()
+        payload = {
+            "sub": user_id,
+            "iat": now,
+            "exp": now + datetime.timedelta(minutes=self.exp_minutes)
+        }
+        return jwt.encode(payload, self.secret, algorithm=self.algorithm)
+    ```
+
+- **Token verification (`verify_token`)**: Decodes and validates a JWT against the configured secret and algorithm.
+    It checks expiration, tampering, and malformed tokens. Returns the decoded payload if valid, or raises a controlled error when verification fails.
+
+    ```python
+    def verify_token(self, token: str) -> dict:
+        try:
+            payload = jwt.decode(token, self.secret, algorithms=[self.algorithm])
+            return {"valid": True, "user_id": payload.get("sub")}
+        except PyJWTError as e:
+            return {"valid": False, "error": str(e)}
+    ```
+
+By centralizing JWT handling in `AuthManager`, the system maintains strict separation of concerns:
+- `Repositories` remain focused on persistence.
+- `Services` orchestrate workflows, relying on the repository.
+- `AuthManager` is the single place where cryptographic token logic resides.
+
+This ensures maintainability, testability, and easy rotation of security mechanisms without affecting higher-level components.
 
 ##### Entities
 This module defines the **core domain entities** of the application.  
@@ -392,6 +442,7 @@ The folder structure will be explained bellow with each repo:
 shared/
 └── repos/
     ├── base_repo.py
+    ├── auth_repo.py
     ├── stats_repo.py
     ├── task_repo.py
     ├── user_repo.py
@@ -415,6 +466,38 @@ shared/
     Executes a SQL-like query against the container. Parameters can be passed as a list of dictionaries (`{"name": ..., "value": ...}`). Returns a list of matching entities.  
 
     By extending `BaseRepository`, all repositories benefit from these generic operations without duplicating code.
+
+- **AuthRepository**
+    Manages authentication and authorization logic, acting as the bridge between user persistence (`UserRepository`) and token management (`AuthManager`).
+    Unlike typical repositories, it does not manage a standalone entity. Instead, it encapsulates credential validation and JWT handling, ensuring that services interact with authentication through a clean interface.
+
+    Methods:
+    - `hash_password(self, password: str)`: creates a SHA-256 hash of the provided password. Used to store and verify credentials securely.
+        ```python
+        def hash_password(self, password: str) -> str:
+            return hashlib.sha256(password.encode()).hexdigest()
+        ```
+    - `validate_user_credentials(self, username: str, password: str)`: verifies that the provided credentials match an existing user.
+        Returns the user document if valid, otherwise `None`.
+        ```python
+        def validate_user_credentials(self, username: str, password: str) -> dict | None:
+            user = self.user_repo.find_by_name(username)
+            if not user:
+                return None
+            if user.get("password_hash") != self.hash_password(password):
+                return None
+            return user
+        ```
+    - `generate_token(self, user_id: str)`: generates a signed JWT for the given user id, delegating to `AuthManager`.
+        ```python
+        def generate_token(self, user_id: str) -> str:
+            return self.auth_manager.generate_token(user_id)
+        ```
+    - `verify_token(self, token: str)`: validates a JWT, checking integrity and expiration, and returns the decoded payload.
+        ```python
+        def verify_token(self, token: str) -> dict:
+            return self.auth_manager.verify_token(token)
+        ```
 
 - **StatsRepository**
     Manages stats from the ecosystem, does not have an entity of it own, but all the statistics will be managed through this repository.
@@ -567,6 +650,7 @@ shared/
 └── entities/
     ├── base_service.py
     ├── service_factory.py
+    ├── auth_service.py
     ├── stats_service.py
     ├── task_service.py
     ├── user_service.py
@@ -607,6 +691,46 @@ shared/
     def get_work_session_service(self) -> WorkSessionService:
         return WorkSessionService(self._ws_repo)
     ```
+
+- **AuthService**  
+    Provides authentication and authorization business logic, acting as the bridge between `AuthRepository` (persistence + token infra) and the HTTP endpoints.  
+    The service enforces business rules for registration and login, delegates password hashing and token operations to the repository layer, and exposes a minimal API that endpoints can call without touching persistence or cryptography details.
+
+    It exposes the following methods to the endpoints:
+
+    - `register(self, username: str, password: str) -> dict`  
+      Registers a new user after validating uniqueness. Password hashing and persistence are delegated to the repository layer. Raises `ValueError` if the username already exists.
+
+      ```python
+      def register(self, username: str, password: str):
+          # Check if user exists
+          if self.repo.user_repo.find_by_name(username):
+              raise ValueError("Username already exists")
+
+          password_hash = self.repo.hash_password(password)
+          user = {"name": username, "password_hash": password_hash}
+          return self.repo.user_repo.create(user)
+      ```
+
+    - `login(self, username: str, password: str) -> str`  
+      Validates credentials via the repository and, on success, returns a signed JWT token. Raises `ValueError` when credentials are invalid.
+
+      ```python
+      def login(self, username: str, password: str) -> str:
+          user = self.repo.validate_user_credentials(username, password)
+          if not user:
+              raise ValueError("Invalid username or password")
+          return self.repo.generate_token(user["id"])
+      ```
+
+    - `validate_token(self, token: str) -> dict`  
+      Delegates token verification to the repository and returns the decoded claims or an error structure (repository handles cryptographic validation and error translation).
+
+      ```python
+      def validate_token(self, token: str):
+          return self.repo.verify_token(token)
+      ```
+
 
 - **StatsService**
     Provides the logic to access the `StatsRepository` from certain endpoints.
