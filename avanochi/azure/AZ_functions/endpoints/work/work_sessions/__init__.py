@@ -1,4 +1,5 @@
 # work/work_sessions/__init__.py
+
 """
 HTTP-triggered Azure Function for work session management (Phase 1).
 Provides:
@@ -11,39 +12,32 @@ import json
 import logging
 import azure.functions as func
 
-from _shared.credential_manager import CredentialManager
-from _shared.database import CosmosDBService, DatabaseError
-from _shared.repos.work_session_repo import WorkSessionRepository
-from _shared.services.work_session_service import WorkSessionService
-from _shared.entities.work_session import WorkSession
+from _shared.database import DatabaseError
+from _shared.services.service_factory import ServiceFactory
 
 
-# Initialize dependencies (reused across invocations)
-cred_manager = CredentialManager()
-db_service = CosmosDBService(cred_manager)
-ws_repo = WorkSessionRepository(db_service)
-ws_service = WorkSessionService(ws_repo)
+# Initialize service factory (reused across invocations)
+factory = ServiceFactory()
+ws_service = factory.get_work_session_service()
 
 
 def _json_response(payload, status_code=200):
-    """Helper to build JSON responses consistently."""
+    # Helper to build JSON responses consistently.
     return func.HttpResponse(
         json.dumps(payload, ensure_ascii=False),
         status_code=status_code,
         mimetype="application/json"
     )
 
-
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info(f"WorkSessions function invoked. Method={req.method}")
 
     try:
-        # Route handling
         route = req.route_params.get("id") or ""
         action = req.route_params.get("action") or ""
 
+        # --- Start session ---
         if req.method == "POST" and route == "start":
-            # POST /work_sessions/start
             try:
                 data = req.get_json()
             except ValueError:
@@ -53,7 +47,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             if not user_id:
                 return _json_response({"error": "Field 'user_id' is required"}, 400)
 
-            # Check if an active session already exists
+            # Ensure no active session exists
             active = ws_service.get_active_session(user_id)
             if active:
                 return _json_response({"error": "Active session already exists"}, 400)
@@ -65,8 +59,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 logging.exception("Database error while starting session")
                 return _json_response({"error": str(e)}, 500)
 
+        # --- End session ---
         elif req.method == "POST" and route:
-            # POST /work_sessions/{id}/end
             session_id = route
             try:
                 ended = ws_service.end_session(session_id)
@@ -78,8 +72,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     return _json_response({"error": msg}, 404)
                 return _json_response({"error": msg}, 500)
 
+        # --- Get active session ---
         elif req.method == "GET" and route == "active":
-            # GET /work_sessions/active?user_id=xxx
             user_id = req.params.get("user_id")
             if not user_id:
                 return _json_response({"error": "Query parameter 'user_id' is required"}, 400)
@@ -99,4 +93,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     except Exception as e:
         logging.exception("Unexpected error in work_sessions function")
-        return _json_response({"error": "Internal server error", "detail": str(e)}, 500)
+        return _json_response(
+            {"error": "Internal server error", "detail": str(e)}, 500
+        )
