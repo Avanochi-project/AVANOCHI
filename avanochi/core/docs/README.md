@@ -151,30 +151,38 @@ The CosmosDBService class abstracts the complexity of creating and maintaining t
 By depending exclusively on the `CredentialManager` to retrieve its credentials, this class adheres to the Single Responsibility Principle, keeping authentication logic separated from database logic. This approach guarantees scalability, maintainability, and consistent usage of environment-based configurations.
 The main responsibilities can be divided into the following components:
 
-- **Initialization (`__init__`)**: Upon instantiation, the service retrieves Cosmos DB credentials through the CredentialManager and sets up the database connection.
-    - It creates a `CosmosClient` with the provided URI and primary key.
-    - It ensures the target database exists (or creates it if missing).
-    - It ensures the container exists (or creates it if missing) with a default partition key and throughput configuration.
+- **Initialization (`__init__`)**: The constructor receives a `CredentialManager` instance and prepares the service for interacting with Cosmos DB.  
+At this stage, only the credential manager is stored. Depending on the chosen strategy, the database connection may be established immediately (**eager initialization**) or deferred until needed (**lazy initialization**).
 
     ```python
     def __init__(self, credential_manager: CredentialManager):
-        # Initialize the Cosmos DB client and ensure the database and container exist.
-        
-        creds = credential_manager.get_cosmos_db_credentials()
-        self._url = creds["uri"]
-        self._key = creds["primary_key"]
-        self._database_name = creds["database_name"]
-        self._container_name = creds["container_name"]
-        # Create the Cosmos client
-        self._client = CosmosClient(self._url, self._key)
-        # Ensure the database exists
-        self._database = self._client.create_database_if_not_exists(id=self._database_name)
-        # Ensure the container exists
-        self._container = self._database.create_container_if_not_exists(
-            id=self._container_name,
-            partition_key=PartitionKey(path="/id"),  # Default partition key
-            offer_throughput=400
-        )
+        self._credential_manager = credential_manager
+        self._client = None
+        self._database = None
+        self._container = None
+    ```
+
+- **Lazy Connection Handling (`_ensure_connection`)**: This private method guarantees that the **Cosmos DB client, database, and container are initialized**.
+It is invoked internally by CRUD operations before performing any interaction with the database.
+This approach ensures that the service can start even if Cosmos DB is temporarily unavailable during app startup, making it ideal for Azure Functions.
+
+    ```python
+    def _ensure_connection(self):
+        if self._client is None:
+            creds = self._credential_manager.get_cosmos_credentials()
+            url = creds["uri"]
+            key = creds["primary_key"]
+            database_name = creds["database_name"]
+            container_name = creds["container_name"]
+
+            # Create client and ensure database + container
+            self._client = CosmosClient(url, key)
+            self._database = self._client.create_database_if_not_exists(id=database_name)
+            self._container = self._database.create_container_if_not_exists(
+                id=container_name,
+                partition_key=PartitionKey(path="/id"),
+                offer_throughput=400
+            )
     ```
 
 - **Database methods**: The `CosmosDBService` provides a set of generic CRUD methods and query execution helpers that abstract direct interaction with Cosmos DB:
