@@ -1,4 +1,5 @@
 # shared/credential_manager.py
+
 import os
 from dotenv import load_dotenv
 
