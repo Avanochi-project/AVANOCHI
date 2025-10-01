@@ -1,2 +1,0 @@
-# Testing logs for AVANOCHI
-
