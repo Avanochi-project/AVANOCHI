@@ -30,6 +30,15 @@ az functionapp create \
   --storage-account avanochistorage \
   --os-type linux
 
+az functionapp config appsettings set \
+  --name avanochi-funcapp \
+  --resource-group avanochi-rg \
+  --settings "AzureWebJobsFeatureFlags=EnableWorkerIndexing"
+
+az functionapp restart \
+  --name avanochi-funcapp \
+  --resource-group avanochi-rg
+
 # ================================
 #   Deploy Azure Cosmos DB
 # ================================
