@@ -957,12 +957,16 @@ COSMOS_DB_PRIMARY_KEY=[SECRET]
 
 ### 1.2.4 Final testing
 
-After doing all the previous configuration, testing in the local enviroment should work out perfectly, giving us the following output:
+After doing all the previous configuration, testing in the local enviroment should work out perfectly, 
 
 ```bash
 (base) mike@AVAPC-083306703:/mnt/c/Users/mike.maranon/Desktop/codes/AVANOCHI$ cd avanochi/azure/AZ_functions/
 (base) mike@AVAPC-083306703:/mnt/c/Users/mike.maranon/Desktop/codes/AVANOCHI/avanochi/azure/AZ_functions$ conda activate azfunc310
 (azfunc310) mike@AVAPC-083306703:/mnt/c/Users/mike.maranon/Desktop/codes/AVANOCHI/avanochi/azure/AZ_functions$ func start
+```
+giving us the following output:
+
+```bash
 Found Python version 3.10.18 (python3).
 You are running a preview version of Azure Functions Core Tools.
 
@@ -984,5 +988,4 @@ Functions:
 For detailed output, run func with --verbose flag.
 [2025-09-30T13:15:16.081Z] Host lock lease acquired by instance ID '0000000000000000000000003E9803A7'.
 ```
-
 As we can see, we have the three exposed endpoints with their required input data such as `{user_id}` for `stats`

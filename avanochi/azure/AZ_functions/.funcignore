@@ -1,1 +1,14 @@
-.venv
+# VS Code
+.vscode/
+
+# Enviroment files
+.env
+local.settings.json
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Git
+.git/
+.gitignore

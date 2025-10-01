@@ -24,7 +24,7 @@ az functionapp create \
   --resource-group avanochi-rg \
   --consumption-plan-location westeurope \
   --runtime python \
-  --runtime-version 3.13 \
+  --runtime-version 3.10 \
   --functions-version 4 \
   --name avanochi-funcapp \
   --storage-account avanochistorage \
