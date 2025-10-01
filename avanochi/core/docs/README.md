@@ -765,222 +765,6 @@ It exposes three main endpoints — **tasks**, **work_sessions**, and **stats** 
 Together, they provide the minimal viable product (MVP) for tracking productivity:  
 users can create and complete tasks, log their working sessions, and retrieve basic performance statistics.
 
-##### Tasks Endpoint
-
-The **Tasks** endpoint handles the creation and management of user tasks.  
-Tasks represent the smallest measurable unit of productivity and are the foundation of the gamified workflow.  
-This endpoint ensures users can easily record their daily goals and track progress.
-
-- **POST /api/tasks**  
-    Create a new task for a user.  
-    The method first validates the request payload: it must contain a non-empty `title` and a `user_id`, since Cosmos DB requires partitioning by user.  
-    If valid, it instantiates a new `Task` entity, adds the `user_id`, and persists it through the repository.  
-    In case of invalid input, a 400 error is returned; if the database layer fails, the error is logged and a 500 response is returned.
-
-
-    ```python
-    def main(req: func.HttpRequest) -> func.HttpResponse:
-        # rest of the method
-        if req.method == "POST":
-            # Create a new task
-            try:
-                data = req.get_json()
-            except ValueError:
-                return _json_response({"error": "Invalid JSON payload"}, 400)
-
-            title = (data.get("title") or "").strip()
-            user_id = data.get("user_id")
-
-            if not title:
-                return _json_response({"error": "Field 'title' is required"}, 400)
-            if not user_id:
-                # CosmosDBService.create_item currently requires user_id in the item
-                return _json_response({"error": "Field 'user_id' is required"}, 400)
-
-            # Build domain entity and persist (we add user_id to the dict because Cosmos expects it)
-            task = Task(title=title)
-            task_dict = task.to_dict()
-            task_dict["user_id"] = user_id
-            # Optionally store created_by / created_at metadata here (created_at already present)
-            try:
-                created = task_repo.create(task_dict)
-                return _json_response(created, 201)
-            except DatabaseError as e:
-                logging.exception("Database error while creating task")
-                return _json_response({"error": str(e)}, 500)
-    ```
-
-- **GET /api/tasks?user_id=...**  
-    Retrieve all tasks belonging to a given user.  
-    If a `user_id` query parameter is provided, the function builds a filtered Cosmos DB query (`SELECT * FROM c WHERE c.type = @type AND c.user_id = @user_id`).  
-    Otherwise, it delegates to `TaskService.list_tasks()`, which fetches all tasks in the system.  
-    This design keeps the filtering logic close to the endpoint while keeping the listing logic reusable in the service.  
-    Errors in querying Cosmos DB are caught and logged, and the endpoint returns 500 in such cases.
-
-
-    ```python
-    def main(req: func.HttpRequest) -> func.HttpResponse:
-        # rest of the method
-        if req.method == "GET":
-            # List tasks. If user_id query param provided, filter by user.
-            user_id = req.params.get("user_id")
-            try:
-                if user_id:
-                    query = "SELECT * FROM c WHERE c.type = @type AND c.user_id = @user_id"
-                    params = [
-                        {"name": "@type", "value": "task"},
-                        {"name": "@user_id", "value": user_id}
-                    ]
-                    items = task_repo.query(query, params)
-                else:
-                    # Delegate to service which returns all tasks of type 'task'
-                    items = task_service.list_tasks()
-                return _json_response(items, 200)
-            except DatabaseError as e:
-                logging.exception("Database error while listing tasks")
-                return _json_response({"error": str(e)}, 500)
-    ```
-
-- **PATCH /api/tasks/{id}**  
-    Update an existing task, most commonly to mark it as `completed`.  
-    The method extracts the task `id` from the route parameters and optionally accepts an action from the request body (default: `"complete"`).  
-    If the action is `"complete"`, it delegates to `TaskService.complete_task()`, which updates the entity and persists it via the repository.  
-    Errors are handled carefully: if the database indicates the task was not found, the endpoint returns 404; other errors result in 500.  
-    If an unsupported action is provided, the endpoint explicitly returns 400 with a descriptive error message.
-
-    ```python
-    def main(req: func.HttpRequest) -> func.HttpResponse:
-        # rest of the method
-        if req.method == "PATCH":
-            # Partial update — we use this to mark a task as completed.
-            # Expect task id in route parameters: route: "tasks/{id?}"
-            task_id = req.route_params.get("id") or req.params.get("id")
-            if not task_id:
-                return _json_response({"error": "Task id is required in route (tasks/{id})"}, 400)
-
-            # Optional action body (defaults to complete)
-            try:
-                body = req.get_json() if req.get_body() else {}
-            except ValueError:
-                body = {}
-
-            action = (body.get("action") or "complete").lower()
-
-            if action == "complete":
-                try:
-                    updated = task_service.complete_task(task_id)
-                    return _json_response(updated, 200)
-                except DatabaseError as e:
-                    # If not found, service/repo may raise DatabaseError - report 404 when appropriate
-                    msg = str(e)
-                    logging.exception(f"Error completing task {task_id}")
-                    if "not found" in msg.lower():
-                        return _json_response({"error": msg}, 404)
-                    return _json_response({"error": msg}, 500)
-            else:
-                return _json_response({"error": f"Unsupported action '{action}'"}, 400)
-
-    ```
-
-##### WorkSessions Endpoint
-
-The **WorkSessions** endpoint manages productive work sessions for users.  
-A work session represents a block of focused time linked to a specific user, with automatic tracking of start, end, and total duration.  
-This endpoint ensures users can track their working habits, close active sessions properly, and analyze their productivity later.  
-It is powered by the `WorkSessionService` and `WorkSessionRepository`, which encapsulate business logic and persistence in Cosmos DB.
-
-- **POST /api/work_sessions**  
-    Start a new work session for a user.  
-    The method requires a `user_id` in the request body. The endpoint validates the input, then creates a new `WorkSession` entity with the current UTC timestamp as `start_time`.  
-    The session is persisted through the repository. If `user_id` is missing, the function responds with 400; if database persistence fails, it logs the error and returns 500.  
-    The response includes the session’s metadata (UUID, start time).
-
-    ```python
-    def main(req: func.HttpRequest) -> func.HttpResponse:
-        if req.method == "POST":
-            try:
-                data = req.get_json()
-            except ValueError:
-                return _json_response({"error": "Invalid JSON payload"}, 400)
-
-            user_id = data.get("user_id")
-            if not user_id:
-                return _json_response({"error": "Field 'user_id' is required"}, 400)
-
-            try:
-                session = work_session_service.start_session(user_id)
-                return _json_response(session, 201)
-            except DatabaseError as e:
-                logging.exception("Database error while starting session")
-                return _json_response({"error": str(e)}, 500)
-    ```
-
-- **PATCH /api/work_sessions/{id}**  
-    End an active work session.  
-    The method extracts the session `id` from the route parameters. It then calls `WorkSessionService.end_session()`, which calculates the duration in hours by comparing the `start_time` with the current UTC timestamp.  
-    The session entity is updated and persisted back into Cosmos DB.  
-    If the `id` is missing in the request, the function responds with 400. If the session does not exist, the error is mapped to a 404; other database issues result in 500.
-
-    ```python
-    def main(req: func.HttpRequest) -> func.HttpResponse:
-        if req.method == "PATCH":
-            session_id = req.route_params.get("id") or req.params.get("id")
-            if not session_id:
-                return _json_response({"error": "Session id is required in route (work_sessions/{id})"}, 400)
-
-            try:
-                updated = work_session_service.end_session(session_id)
-                return _json_response(updated, 200)
-            except DatabaseError as e:
-                msg = str(e)
-                logging.exception(f"Error ending session {session_id}")
-                if "not found" in msg.lower():
-                    return _json_response({"error": msg}, 404)
-                return _json_response({"error": msg}, 500)
-    ```
-
-- **GET /api/work_sessions?user_id=...**  
-    List all work sessions for a given user.  
-    Requires `user_id` as a query parameter, since sessions are always tied to a user.  
-    The function delegates to `WorkSessionService.list_sessions()`, which queries Cosmos DB for all documents of type `work_session` matching the given `user_id`.  
-    If no sessions exist, the endpoint returns an empty list. If a database error occurs, it logs the failure and returns 500.
-
-    ```python
-    def main(req: func.HttpRequest) -> func.HttpResponse:
-        if req.method == "GET":
-            user_id = req.params.get("user_id")
-            if not user_id:
-                return _json_response({"error": "Query parameter 'user_id' is required"}, 400)
-
-            try:
-                sessions = work_session_service.list_sessions(user_id)
-                return _json_response(sessions, 200)
-            except DatabaseError as e:
-                logging.exception("Database error while listing sessions")
-                return _json_response({"error": str(e)}, 500)
-    ```
-
-- **GET /api/work_sessions/active?user_id=...**  
-    Retrieve the active work session for a given user (if any).  
-    This is useful to prevent overlapping sessions or to resume tracking.  
-    It requires `user_id` as a query parameter and delegates to `WorkSessionService.get_active_session()`.  
-    If no active session exists, the function returns `null`.  
-    Any database errors are logged, with 500 returned in case of failure.
-
-    ```python
-    def main(req: func.HttpRequest) -> func.HttpResponse:
-        if req.method == "GET" and "active" in req.url:
-            user_id = req.params.get("user_id")
-            if not user_id:
-                return _json_response({"error": "Query parameter 'user_id' is required"}, 400)
-
-            try:
-                active = work_session_service.get_active_session(user_id)
-                return _json_response(active, 200)
-            except DatabaseError as e:
-                logging.exception("Database error while fetching active session")
-                return _json_response({"error": str(e)}, 500)
-    ```
 ##### Stats Endpoint
 
 The **Stats** endpoint provides aggregated insights about a user’s productivity.  
@@ -1005,40 +789,216 @@ All logic is orchestrated by the `WorkSessionService` and `TaskService`, which i
 
     ```python
     def main(req: func.HttpRequest) -> func.HttpResponse:
-        if req.method == "GET":
-            user_id = req.params.get("user_id")
-            if not user_id:
-                return _json_response({"error": "Query parameter 'user_id' is required"}, 400)
+        logging.info(f"Stats function invoked. Method={req.method}")
 
-            try:
-                # Fetch data
-                tasks = task_repo.query(
-                    "SELECT * FROM c WHERE c.type = @type AND c.user_id = @user_id",
-                    [{"name": "@type", "value": "task"}, {"name": "@user_id", "value": user_id}]
-                )
-                sessions = work_session_repo.list_sessions(user_id)
+        if req.method != "GET":
+            return _json_response({"error": f"Method {req.method} not allowed"}, 405)
 
-                # Compute stats
-                total_tasks = len(tasks)
-                completed_tasks = sum(1 for t in tasks if t.get("completed"))
-                total_sessions = len([s for s in sessions if s.get("end_time")])
-                total_hours = sum(s.get("duration", 0) for s in sessions if s.get("duration"))
+        user_id = req.route_params.get("user_id") or req.params.get("user_id")
+        if not user_id:
+            return _json_response({"error": "user_id is required in route or query"}, 400)
 
-                stats = {
-                    "user_id": user_id,
-                    "total_tasks": total_tasks,
-                    "completed_tasks": completed_tasks,
-                    "total_sessions": total_sessions,
-                    "total_hours": total_hours,
-                }
-                return _json_response(stats, 200)
+        try:
+            stats = stats_service.get_user_stats(user_id)
+            return _json_response(stats, 200)
 
-            except DatabaseError as e:
-                logging.exception("Database error while computing stats")
-                return _json_response({"error": str(e)}, 500)
+        except DatabaseError as e:
+            logging.exception("Database error while generating stats")
+            return _json_response({"error": str(e)}, 500)
+        except Exception as e:
+            logging.exception("Unexpected error in stats function")
+            return _json_response({"error": "Internal server error", "detail": str(e)}, 500)
     ```
 
 <div class="page-break"></div>
+
+##### Tasks Endpoint
+
+The **Tasks** endpoint handles the creation and management of user tasks.  
+Tasks represent the smallest measurable unit of productivity and are the foundation of the gamified workflow.  
+This endpoint ensures users can easily record their daily goals and track progress.
+
+- **POST /api/tasks**  
+    Create a new task for a user.  
+    The method first validates the request payload: it must contain a non-empty `title` and a `user_id`, since Cosmos DB requires partitioning by user.  
+    If valid, it instantiates a new `Task` entity, adds the `user_id`, and persists it through the repository.  
+    In case of invalid input, a 400 error is returned; if the database layer fails, the error is logged and a 500 response is returned.
+    It delegates to `task_service.create_task(user_id, title)` 
+
+
+    ```python
+    def main(req: func.HttpRequest) -> func.HttpResponse:
+
+        # rest of the method
+
+        if req.method == "POST":
+            # Create a new task
+            try:
+                data = req.get_json()
+            except ValueError:
+                return _json_response({"error": "Invalid JSON payload"}, 400)
+
+            title = (data.get("title") or "").strip()
+            user_id = data.get("user_id")
+
+            try:
+                created = task_service.create_task(user_id, title)
+                return _json_response(created, 201)
+            except ValueError as ve:
+                return _json_response({"error": str(ve)}, 400)
+            except DatabaseError as e:
+                logging.exception("Database error while creating task")
+                return _json_response({"error": str(e)}, 500)
+    ```
+
+- **GET /api/tasks?user_id=...**  
+    Retrieve tasks, optionally filtered by a specific user.  
+    The endpoint delegates directly to `TaskService.list_tasks(user_id)`, which decides whether to call `TaskRepository.list_tasks()` (all tasks) or `TaskRepository.list_tasks_by_user(user_id)` (filtered).  
+    This keeps the endpoint thin and ensures all query logic remains encapsulated in the repository layer, respecting the service–repository separation.  
+    Any `DatabaseError` raised is caught, logged, and returned as a `500 Internal Server Error`.  
+
+
+    ```python
+    def main(req: func.HttpRequest) -> func.HttpResponse:
+
+        # rest of the method
+
+        if req.method == "GET":
+            # List tasks, optionally filtered by user_id
+            user_id = req.params.get("user_id")
+            try:
+                items = task_service.list_tasks(user_id)
+                return _json_response(items, 200)
+            except DatabaseError as e:
+                logging.exception("Database error while listing tasks")
+                return _json_response({"error": str(e)}, 500)
+    ```
+
+- **PATCH /api/tasks/{id}**  
+    Update an existing task, most commonly to mark it as `completed`.  
+    The method extracts the task `id` from the route parameters and optionally accepts an action from the request body (default: `"complete"`).  
+    If the action is `"complete"`, it delegates to `TaskService.complete_task(task_id)`, which performs the update and persists the change through the repository.  
+    Errors are handled carefully: if the database indicates the task was not found, the endpoint returns **404**; other database errors result in **500**.  
+    If an unsupported action is provided, the endpoint explicitly returns **400** with a descriptive error message.  
+
+    ```python
+    def main(req: func.HttpRequest) -> func.HttpResponse:
+
+        # rest of the method
+
+        if req.method == "PATCH":
+            # Partial update — used to mark a task as completed.
+            task_id = req.route_params.get("id") or req.params.get("id")
+            if not task_id:
+                return _json_response(
+                    {"error": "Task id is required in route (tasks/{id})"}, 400
+                )
+
+            try:
+                updated = task_service.complete_task(task_id)
+                return _json_response(updated, 200)
+            except DatabaseError as e:
+                msg = str(e)
+                logging.exception(f"Error completing task {task_id}")
+                if "not found" in msg.lower():
+                    return _json_response({"error": msg}, 404)
+                return _json_response({"error": msg}, 500)
+    ```
+
+##### WorkSessions Endpoint
+
+The **WorkSessions** endpoint manages productive work sessions for users.  
+A work session represents a block of focused time linked to a specific user, with automatic tracking of start, end, and total duration.  
+This endpoint ensures users can track their working habits, close active sessions properly, and analyze their productivity later.  
+It is powered by the `WorkSessionService`, which encapsulate business logic.
+
+- **POST /api/work_sessions**  
+    Manage work sessions for a user. This endpoint supports two actions: starting a new session or ending an existing one.  
+
+    - **Start a session** (`POST /work_sessions/start`)  
+      Requires a `user_id` in the request body. The endpoint validates the input and checks if an active session already exists for the user.  
+      If no active session exists, it delegates to `WorkSessionService.start_session(user_id)`, which creates a new `WorkSession` entity with the current UTC timestamp as `start_time` and persists it.  
+      If `user_id` is missing, the function responds with **400**; if an active session already exists, it responds with **400**; if database persistence fails, it logs the error and returns **500**.  
+      On success, the response includes the session’s metadata (UUID, start time).  
+
+    - **End a session** (`POST /work_sessions/{id}/end`)  
+      Expects the session `id` in the route. The endpoint calls `WorkSessionService.end_session(session_id)`, which updates the session by setting its `end_time`.  
+      If the session is not found, it responds with **404**; for other database errors, it responds with **500**.  
+
+    ```python
+    def main(req: func.HttpRequest) -> func.HttpResponse:
+
+    # rest of the method
+
+    # --- Start session ---
+        if req.method == "POST" and route == "start":
+            try:
+                data = req.get_json()
+            except ValueError:
+                return _json_response({"error": "Invalid JSON payload"}, 400)
+
+            user_id = data.get("user_id")
+            if not user_id:
+                return _json_response({"error": "Field 'user_id' is required"}, 400)
+
+            # Ensure no active session exists
+            active = ws_service.get_active_session(user_id)
+            if active:
+                return _json_response({"error": "Active session already exists"}, 400)
+
+            try:
+                session = ws_service.start_session(user_id)
+                return _json_response(session, 201)
+            except DatabaseError as e:
+                logging.exception("Database error while starting session")
+                return _json_response({"error": str(e)}, 500)
+
+        # --- End session ---
+        elif req.method == "POST" and route:
+            session_id = route
+            try:
+                ended = ws_service.end_session(session_id)
+                return _json_response(ended, 200)
+            except DatabaseError as e:
+                msg = str(e)
+                logging.exception(f"Error ending session {session_id}")
+                if "not found" in msg.lower():
+                    return _json_response({"error": msg}, 404)
+                return _json_response({"error": msg}, 500)
+    ```
+
+- **GET /work_sessions/active**  
+    Retrieve the currently active work session for a given user.  
+    Requires `user_id` as a query parameter, since sessions are always tied to a user.  
+    The endpoint delegates to `WorkSessionService.get_active_session(user_id)`, which queries Cosmos DB for any `work_session` document where `end_time` is `NULL`.  
+    If an active session exists, it is returned; otherwise, the endpoint responds with `{"active": False}`.  
+    If the `user_id` parameter is missing, the function responds with **400**.  
+    If a database error occurs, it logs the failure and returns **500**.  
+
+    ```python
+    def main(req: func.HttpRequest) -> func.HttpResponse:
+        
+    # rest of the method
+
+    # --- Get active session ---
+    if req.method == "GET" and route == "active":
+        user_id = req.params.get("user_id")
+        if not user_id:
+            return _json_response({"error": "Query parameter 'user_id' is required"}, 400)
+
+        try:
+            active = ws_service.get_active_session(user_id)
+            if active:
+                return _json_response(active, 200)
+            else:
+                return _json_response({"active": False}, 200)
+        except DatabaseError as e:
+            logging.exception("Database error while checking active session")
+            return _json_response({"error": str(e)}, 500)
+
+    else:
+        return _json_response({"error": f"Method {req.method} with route not supported"}, 405)
+    ```
 
 ## 1.2 Azure Functions Testing
 
