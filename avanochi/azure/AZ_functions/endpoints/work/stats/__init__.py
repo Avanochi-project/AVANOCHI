@@ -1,3 +1,5 @@
+# endpoints/work/stats/__init__.py
+
 """
 HTTP-triggered Azure Function for statistics (Phase 1).
 Provides:

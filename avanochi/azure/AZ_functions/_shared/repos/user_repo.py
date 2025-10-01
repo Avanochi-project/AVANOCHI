@@ -30,3 +30,13 @@ class UserRepository(BaseRepository):
         query = "SELECT * FROM c WHERE c.type = @type"
         params = [{"name": "@type", "value": self.entity_type()}]
         return self.query(query, params)
+
+    def find_by_name(self, name: str):
+        query = "SELECT * FROM c WHERE c.type = @type AND c.name = @name"
+        params = [
+            {"name": "@type", "value": self.entity_type()},
+            {"name": "@name", "value": name}
+        ]
+        results = self.query(query, params)
+        return results[0] if results else None
+
