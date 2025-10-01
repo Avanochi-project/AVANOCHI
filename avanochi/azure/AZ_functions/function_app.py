@@ -1,8 +1,8 @@
 # function_app.py
 import azure.functions as func
-from work.work_sessions import main as work_sessions_main
-from work.tasks import main as tasks_main
-from work.stats import main as stats_main
+from endpoints.work.work_sessions import main as work_sessions_main
+from endpoints.work.tasks import main as tasks_main
+from endpoints.work.stats import main as stats_main
 
 app = func.FunctionApp()
 
