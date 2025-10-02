@@ -22,7 +22,6 @@ def load_endpoint_groups(json_file: str) -> List[EndpointGroup]:
                 url=route_data.get("url", ""),
                 method=route_data.get("method", "GET"),
                 params=route_data.get("params", {}),
-                body=route_data.get("body", {}),
                 description=description
             )
             endpoints_list.append(ep)

@@ -50,7 +50,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
                 try:
                     user = auth_service.register(username, password)
-                    return _json_response({"message": "User registered successfully", "user": user}, 201)
+                    return _json_response(
+                    {
+                        "message": "User registered successfully", 
+                        "user": user["id"]
+                    }
+                    , 201)
                 except ValueError as e:
                     return _json_response({"error": str(e)}, 400)
                 except DatabaseError as e:
@@ -72,7 +77,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
                 try:
                     token = auth_service.login(username, password)
-                    return _json_response({"token": token}, 200)
+                    return _json_response(
+                    {
+                        "token": token
+                    }
+                    , 200)
                 except ValueError as e:
                     return _json_response({"error": str(e)}, 401)
                 except DatabaseError as e:
@@ -84,15 +93,22 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         elif req.method == "GET":
             route = req.route_params.get("action")
+            logging.info(f"Route param received: {route}")
 
             # --- Get user info ---
             if route == "user_info":
                 try:
-                    user_id = auth_service.get_id_from_request(req)
+                    user_id = auth_service.validate_token(req)
+                    logging.info(f"user_id extracted: {user_id}")
                     user = auth_service.get_user_by_id(user_id)
                     if not user:
                         return _json_response({"error": "User not found"}, 404)
-                    return _json_response({"user": user}, 200)
+                    return _json_response(
+                    {
+                        "username": user["name"],
+                        "user_id": user["id"]
+                    }
+                    , 200)
                 except ValueError as e:
                     return _json_response({"error": str(e)}, 401)
                 except DatabaseError as e:

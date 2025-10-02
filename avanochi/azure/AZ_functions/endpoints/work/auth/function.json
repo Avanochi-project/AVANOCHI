@@ -2,12 +2,12 @@
     "scriptFile": "__init__.py",
     "bindings": [
         {
-            "authLevel": "function",
+            "authLevel": "anonymous",
             "type": "httpTrigger",
             "direction": "in",
             "name": "req",
-            "methods": [ "get", "post" ],
-            "route": "work_sessions/{*route}"
+            "methods": ["GET", "POST"],
+            "route": "auth/{action}"
         },
         {
             "type": "http",

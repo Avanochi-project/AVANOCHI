@@ -28,7 +28,6 @@ def _json_response(payload, status_code=200):
         mimetype="application/json"
     )
 
-
 def main(req: func.HttpRequest) -> func.HttpResponse:
     
     # Entry point for the Azure Function.
@@ -49,11 +48,16 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 return _json_response({"error": "Invalid JSON payload"}, 400)
 
             title = (data.get("title") or "").strip()
+            duration = data.get("duration")
             user_id = auth_service.get_id_from_request(req)
 
             try:
-                created = task_service.create_task(user_id, title)
-                return _json_response(created, 201)
+                created = task_service.create_task(user_id, title, duration)
+                return _json_response(
+                {
+                    "task_id": created["id"]
+                }
+                , 201)
             except ValueError as ve:
                 return _json_response({"error": str(ve)}, 400)
             except DatabaseError as e:
@@ -65,7 +69,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             user_id = auth_service.get_id_from_request(req)
             try:
                 items = task_service.list_tasks(user_id)
-                return _json_response(items, 200)
+                return _json_response(
+                {
+                    "tasks": items
+                }    
+                , 200)
             except DatabaseError as e:
                 logging.exception("Database error while listing tasks")
                 return _json_response({"error": str(e)}, 500)
@@ -80,7 +88,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
             try:
                 updated = task_service.complete_task(task_id)
-                return _json_response(updated, 200)
+                return _json_response(
+                {
+                    "task_id": updated["id"],
+                    "completed": updated["completed"]
+                }
+                , 200)
             except DatabaseError as e:
                 msg = str(e)
                 logging.exception(f"Error completing task {task_id}")

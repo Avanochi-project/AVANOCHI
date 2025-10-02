@@ -23,6 +23,6 @@ def stats(req: func.HttpRequest) -> func.HttpResponse:
     return stats_main(req)
 
 @app.function_name(name="Auth")
-@app.route(route="auth/{action}", methods=["POST"])
+@app.route(route="auth/{action}", methods=["GET", "POST"])
 def auth(req: func.HttpRequest) -> func.HttpResponse:
     return auth_main(req)

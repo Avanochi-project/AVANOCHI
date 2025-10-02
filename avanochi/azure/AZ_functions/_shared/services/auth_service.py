@@ -27,24 +27,35 @@ class AuthenticationService(BaseService):
     def get_user_by_id(self, user_id: str) -> dict | None:
         return self.repo.get_user_by_id(user_id)
 
-    def get_id_from_request(self, req):  
-        user_id = self.repo.get_id_from_token(req)
-        if not user_id:
-            raise ValueError("Invalid or expired token")
-        return user_id
-
     def validate_token(self, req) -> bool:
-        # First try with cookies
-        cookie_result = self.repo.check_cookie_token(req.cookies)
-        if cookie_result.get("valid"):
-            return True
+        try:
+            # Try with cookies
+            cookie_result = {}
+            try:
+                cookie_result = self.repo.check_cookie_token(req.cookies)
+            except Exception:
+                cookie_result = {"valid": False}
 
-        # Then try with headers
-        header_result = self.repo.check_header_token(req.headers)
-        if header_result.get("valid"):
-            return True
+            if cookie_result.get("valid"):
+                return cookie_result.get("user_id")
 
-        # If neither worked, return False
-        return False
+            # Try with headers
+            header_result = {}
+            try:
+                header_result = self.repo.check_header_token(req.headers)
+            except Exception:
+                header_result = {"valid": False}
+
+            if header_result.get("valid"):
+                return header_result.get("user_id")
+
+            # If neither worked, return False
+            return False
+
+        except Exception as e:
+            # Log the error si es necesario
+            print(f"Token validation error: {e}")
+            return False
+
 
 

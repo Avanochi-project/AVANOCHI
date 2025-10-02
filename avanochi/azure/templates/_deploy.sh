@@ -75,7 +75,7 @@ az cosmosdb sql container create \
     --account-name $COSMOS_ACCOUNT \
     --database-name $COSMOS_DB \
     --name $COSMOS_CONTAINER \
-    --partition-key-path "/user_id" \
+    --partition-key-path "/id" \
     --resource-group $RESOURCE_GROUP
 
 # ======================================

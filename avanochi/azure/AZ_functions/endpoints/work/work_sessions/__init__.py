@@ -4,7 +4,7 @@
 HTTP-triggered Azure Function for work session management (Phase 1).
 Provides:
  - POST /work_sessions/start        -> start a work session
- - POST /work_sessions/{id}/end     -> end a work session
+ - POST /work_sessions/end/{id}     -> end a work session
  - GET  /work_sessions/active       -> get active session for a user
 """
 
@@ -42,10 +42,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         # --- Start session ---
         if req.method == "POST" and route == "start":
-            try:
-                data = req.get_json()
-            except ValueError:
-                return _json_response({"error": "Invalid JSON payload"}, 400)
 
             user_id = auth_service.get_id_from_request(req)
             if not user_id:
@@ -58,17 +54,32 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
             try:
                 session = ws_service.start_session(user_id)
-                return _json_response(session, 201)
+                return _json_response(
+                {
+                    "session_id": session["id"],
+                    "start_time": session["start_time"]
+                }
+                , 201)
             except DatabaseError as e:
                 logging.exception("Database error while starting session")
                 return _json_response({"error": str(e)}, 500)
 
         # --- End session ---
-        elif req.method == "POST" and route:
-            session_id = route
+        elif req.method == "POST" and route == "end":
+
+            try:
+                data = req.get_json()
+            except ValueError:
+                return _json_response({"error": "Invalid JSON payload"}, 400)
+            
+            session_id = data.get("session_id")
             try:
                 ended = ws_service.end_session(session_id)
-                return _json_response(ended, 200)
+                return _json_response(
+                {
+                    "session_id": ended["id"]
+                }
+                , 200)
             except DatabaseError as e:
                 msg = str(e)
                 logging.exception(f"Error ending session {session_id}")
@@ -85,7 +96,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             try:
                 active = ws_service.get_active_session(user_id)
                 if active:
-                    return _json_response(active, 200)
+                    return _json_response(
+                    {
+                        "session_id": active["id"],
+                        "user_id": active["user_id"],
+                        "start_time": active["start_time"],
+                        "end_time": active["end_time"] or None,
+                    }
+                    , 200)
                 else:
                     return _json_response({"active": False}, 200)
             except DatabaseError as e:

@@ -5,25 +5,35 @@
                 "description": "Register a new user",
                 "url": "http://localhost:7071/api/auth/register",
                 "method": "POST",
-                "body": {
+                "params": {
                     "username": "string",
                     "password": "string"
+                },
+                "response": {
+                    "user_id": "string"
                 }
             },
             "login": {
                 "description": "Login a specific user",
                 "url": "http://localhost:7071/api/auth/login",
                 "method": "POST",
-                "body": {
+                "params": {
                     "username": "string",
                     "password": "string"
+                }, 
+                "response": {
+                    "token": "string"
                 }
             },
             "user_info": {
                 "description": "Get user information",
-                "url": "http://localhost:7071/api/auth/user_info/",
+                "url": "http://localhost:7071/api/auth/user_info",
                 "method": "GET",
-                "body": {}
+                "params": {},
+                "response": {
+                    "user_id": "string",
+                    "username": "string"
+                }
             }
         },
         "description": "Endpoint for user authentication."
@@ -36,6 +46,11 @@
                 "method": "GET",
                 "params": {
                     "user_id": "string"
+                },
+                "response": {
+                    "user_id": "string",
+                    "hours_worked": "number",
+                    "tasks_completed": "number"
                 }
             }
         },
@@ -47,21 +62,73 @@
                 "description": "Create a new task",
                 "url": "http://localhost:7071/api/tasks",
                 "method": "POST",
-                "body": {
+                "params": {
                     "title": "string",
-                    "description": "string",
-                    "due_date": "string"
+                    "duration": "number"
+                },
+                "response": {
+                    "task_id": "string"
                 }
             },
             "get_tasks": {
                 "description": "Get all tasks for a user",
-                "url": "http://localhost:7071/api/tasks/{user_id}",
+                "url": "http://localhost:7071/api/tasks",
                 "method": "GET",
                 "params": {
                     "user_id": "string"
+                },
+                "response": {
+                    "tasks": "array of task objects"
+                }
+            },
+            "complete_task": {
+                "description": "Mark a task as completed",
+                "url": "http://localhost:7071/api/tasks/",
+                "method": "PATCH",
+                "params": {
+                    "task_id": "string"
+                },
+                "response": {
+                    "task_id": "string",
+                    "completed": "string"
                 }
             }
         },
         "description": "Endpoints to create and retrieve tasks."
+    },
+    "Work Session": {
+        "routes": {
+            "start_session": {
+                "description": "Start a new work session",
+                "url": "http://localhost:7071/api/work_session/start",
+                "method": "POST",
+                "params": {},
+                "response": {
+                    "session_id": "string",
+                    "start_time": "string"
+                }
+            },
+            "end_session": {
+                "description": "End the selected work session",
+                "url": "http://localhost:7071/api/work_session/end",
+                "method": "POST",
+                "params": {
+                    "session_id": "string"
+                }
+            },
+            "get_session": {
+                "description": "Get the active work session for a user",
+                "url": "http://localhost:7071/api/work_session/active",
+                "method": "GET",
+                "params": {},
+                "response": {
+                    "session_id": "string",
+                    "user_id": "string",
+                    "start_time": "string",
+                    "end_time": "string or null"
+                }
+            }
+        },
+        "description": "Endpoints to manage work sessions."
     }
 }

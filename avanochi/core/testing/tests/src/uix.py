@@ -1,4 +1,6 @@
-# src/uix.py
+# test/src/uix.py
+
+import json
 import os
 from typing import List, Dict, Any
 from src.endpoint import Endpoint, EndpointGroup
@@ -64,8 +66,31 @@ def fill_endpoint_body(endpoint: Endpoint) -> Dict[str, Any]:
     draw_panel(endpoint.route_name, ["Enter the following values:"])
     body_data: Dict[str, Any] = {}
 
-    for key in endpoint.body:
-        value = input(f"{key.capitalize()} [{endpoint.body[key]}]: ") or endpoint.body[key]
+    for key in endpoint.params:
+        value = input(f"{key.capitalize()} [{endpoint.params[key]}]: ") or endpoint.params[key]
         body_data[key] = value
 
     return body_data
+
+def print_API_response(endpoint, response_data: dict):
+    """
+    Pretty print the response based on the endpoint's response schema.
+    Falls back to printing raw JSON if schema not available or doesn't match.
+    """
+    response_schema = getattr(endpoint, "response", None)
+
+    print("\n+---------------------------+")
+    print("|       API RESPONSE        |")
+    print("+---------------------------+")
+
+    if not response_schema:
+        # No schema provided, just dump the whole JSON nicely
+        print(json.dumps(response_data, indent=4))
+        return
+
+    # Print each expected field in the schema
+    for key, desc in response_schema.items():
+        value = response_data.get(key, "<missing>")
+        print(f"{key}: {value} ({desc})")
+
+    print("+---------------------------+\n")
