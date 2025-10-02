@@ -4,8 +4,14 @@ import requests
 from typing import Dict, Optional, Any
 
 class HttpClient:
-    
+
     # Simple HTTP client for testing absolute URLs.
+
+    def __init__(self):
+        self.token: Optional[str] = None 
+
+    def set_token(self, token: str):
+        self.token = token  
 
     def _request(
         self,
@@ -16,6 +22,12 @@ class HttpClient:
         json: Optional[Dict[str, Any]] = None
     ) -> requests.Response:
         
+        if headers is None:
+            headers = {}
+        
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
+
         # Send an HTTP request to the absolute URL.
         try:
             response = requests.request(

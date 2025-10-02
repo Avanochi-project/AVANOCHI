@@ -4,6 +4,36 @@ from src.database import load_endpoint_groups
 from src.uix import select_endpoint_group, select_endpoint, fill_endpoint_body, clear_screen
 from src.http_client import HttpClient
 
+client = HttpClient()
+
+def login():
+    
+    # Simple login to get a token and store in client
+
+    clear_screen()
+    print("||===========================================||")
+    print("||              LOGIN REQUIRED               ||")
+    print("||-------------------------------------------||")
+    print("||         test user: prueba \ 1234          ||")
+    print("||===========================================||")
+    username = input("      > Username: ")
+    password = input("      > Password: ")
+
+    login_body = {"username": username, "password": password}
+    
+    try:
+        response = client.post("http://localhost:7071/api/auth/login", json=login_body)
+        data = response.json()
+        token = data.get("token")
+        if not token:
+            print("Login failed: no token returned.")
+            exit(1)
+        client.set_token(token)
+        print("Login successful, token stored.\n")
+    except Exception as e:
+        print(f"Login failed: {e}")
+        exit(1)
+
 def main():
     """
     Main workflow for local endpoint testing tool.
@@ -16,7 +46,6 @@ def main():
     domain_groups = load_endpoint_groups("endpoints.json")
 
     # Create HTTP client (base_url can be empty if endpoints have full URL)
-    client = HttpClient()
 
     while True:
         # ===== Level 1: Select EndpointGroup =====
@@ -70,4 +99,5 @@ def main():
 
 
 if __name__ == "__main__":
+    login()
     main()
