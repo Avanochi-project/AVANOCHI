@@ -1,0 +1,46 @@
+{
+    "Authentication": {
+        "routes": {
+            "register": {
+                "description": "Register a new user",
+                "url": "http://localhost:7071/api/auth/register",
+                "method": "POST",
+                "body": {
+                    "username": "string",
+                    "password": "string"
+                },
+                "response": {}
+            },
+            "login": {
+                "description": "Login a specific user",
+                "url": "http://localhost:7071/api/auth/login",
+                "method": "POST",
+                "body": {
+                    "username": "string",
+                    "password": "string"
+                },
+                "response": {
+                    "token": "string"
+                }
+            }
+        },
+        "description": "Endpoint for user authentication. Expects JSON body with 'username' and 'password'."
+    },
+    "stats": {
+        "routes": {
+            "get_stats": {
+                "description": "Get user statistics",
+                "url": "http://localhost:7071/api/stats/{user_id}",
+                "method": "GET",
+                "params": {
+                    "user_id": "string"
+                },
+                "response": {
+                    "hours_worked": "number",
+                    "tasks_completed": "number"
+                }
+            }
+        },
+        "description": "Endpoint to retrieve user statistics. Requires 'user_id' as a path parameter."
+    }
+}
