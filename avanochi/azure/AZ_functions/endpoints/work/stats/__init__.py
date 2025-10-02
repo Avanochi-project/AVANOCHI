@@ -16,6 +16,7 @@ from _shared.services.service_factory import ServiceFactory
 # Initialize service once
 factory = ServiceFactory()
 stats_service = factory.get_stats_service()
+auth_service = factory.get_auth_service()
 
 def _json_response(payload, status_code=200):
     return func.HttpResponse(
@@ -26,6 +27,10 @@ def _json_response(payload, status_code=200):
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info(f"Stats function invoked. Method={req.method}")
+
+    # AUTHENTICATION
+    if not auth_service.is_authenticated(req):
+        return _json_response({"error": "Unauthorized"}, 401)
 
     if req.method != "GET":
         return _json_response({"error": f"Method {req.method} not allowed"}, 405)

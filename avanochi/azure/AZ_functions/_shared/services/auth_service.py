@@ -24,5 +24,9 @@ class AuthenticationService(BaseService):
             raise ValueError("Invalid username or password")
         return self.repo.generate_token(user["id"])
 
-    def validate_token(self, token: str):
-        return self.repo.verify_token(token)
+    def validate_token(self, token: str) -> bool:
+        return (
+            self.repo.check_cookie_token({"auth_token": token})["valid"] or
+            self.repo.check_header_token({"Authorization": f"Bearer {token}"})["valid"]
+        )
+
