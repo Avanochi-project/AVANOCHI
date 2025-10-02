@@ -22,5 +22,15 @@ class AuthRepository:
     def generate_token(self, user_id: str) -> str:
         return self.auth_manager.generate_token(user_id)
 
-    def verify_token(self, token: str) -> dict:
+    def check_cookie_token(self, cookies: dict) -> dict:
+        token = cookies.get("auth_token")
+        if not token:
+            return {"valid": False, "error": "No token in cookie"}
+        return self.auth_manager.verify_token(token)
+    
+    def check_header_token(self, headers: dict) -> dict:
+        auth_header = headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return {"valid": False, "error": "No Bearer token in Authorization header"}
+        token = auth_header.split(" ", 1)[1]
         return self.auth_manager.verify_token(token)

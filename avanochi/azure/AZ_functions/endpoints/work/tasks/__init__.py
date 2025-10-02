@@ -18,6 +18,7 @@ from _shared.services.service_factory import ServiceFactory
 # Initialize service once (through the factory)
 factory = ServiceFactory()
 task_service = factory.get_task_service()
+auth_service = factory.get_auth_service()
 
 def _json_response(payload, status_code=200):
     # Helper to build JSON responses consistently.
@@ -35,6 +36,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     logging.info(f"Tasks function invoked. Method={req.method}")
 
+    # AUTHENTICATION
+    if not auth_service.is_authenticated(req):
+        return _json_response({"error": "Unauthorized"}, 401)
+    
     try:
         if req.method == "POST":
             # Create a new task
