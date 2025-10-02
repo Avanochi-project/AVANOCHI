@@ -55,13 +55,12 @@ class CosmosDBService:
     # ==============================
 
     def create_item(self, item: dict) -> dict:
+
+        self._ensure_connection()
         try:
             # Ensure unique ID
             if "id" not in item:
                 item["id"] = str(uuid.uuid4())
-
-            if "user_id" not in item:
-                raise DatabaseError("Missing required field: 'user_id'")
 
             created = self._container.create_item(body=item)
             logging.info(f"Item created with id={created['id']}")
@@ -71,7 +70,10 @@ class CosmosDBService:
             raise DatabaseError(f"Failed to create item: {e.message}") from e
 
     def read_item(self, item_id: str, partition_key: str) -> dict:
+
         # Read a single item from the container.
+
+        self._ensure_connection()
         try:
             return self._container.read_item(item=item_id, partition_key=partition_key)
         except exceptions.CosmosResourceNotFoundError:
@@ -80,6 +82,9 @@ class CosmosDBService:
             raise DatabaseError(f"Failed to read item '{item_id}': {e.message}") from e
 
     def upsert_item(self, item: dict) -> dict:
+
+        self._ensure_connection()
+
         try:
             if "id" not in item:
                 item["id"] = str(uuid.uuid4())
@@ -96,7 +101,10 @@ class CosmosDBService:
 
 
     def delete_item(self, item_id: str, partition_key: str) -> None:
+
         # Delete an item by id.
+        
+        self._ensure_connection()
         try:
             logging.info(f"Attempting to delete item with id={item_id}")
             self._container.delete_item(item=item_id, partition_key=partition_key)
@@ -106,7 +114,10 @@ class CosmosDBService:
             raise DatabaseError(f"Failed to delete item '{item_id}': {e.message}") from e
 
     def send_query(self, query: str, parameters: list = None) -> list[dict]:
+        
         # Execute a query against the container.
+
+        self._ensure_connection()
         if parameters is None:
             parameters = []
         try:
