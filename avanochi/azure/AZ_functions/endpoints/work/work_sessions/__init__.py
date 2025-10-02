@@ -33,7 +33,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info(f"WorkSessions function invoked. Method={req.method}")
     
     # AUTHENTICATION
-    if not auth_service.is_authenticated(req):
+    if not auth_service.validate_token(req):
         return _json_response({"error": "Unauthorized"}, 401)
     
     try:
@@ -47,7 +47,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             except ValueError:
                 return _json_response({"error": "Invalid JSON payload"}, 400)
 
-            user_id = data.get("user_id")
+            user_id = auth_service.get_id_from_request(req)
             if not user_id:
                 return _json_response({"error": "Field 'user_id' is required"}, 400)
 
@@ -78,7 +78,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         # --- Get active session ---
         elif req.method == "GET" and route == "active":
-            user_id = req.params.get("user_id")
+            user_id = auth_service.get_id_from_request(req)
             if not user_id:
                 return _json_response({"error": "Query parameter 'user_id' is required"}, 400)
 

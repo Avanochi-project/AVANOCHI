@@ -185,20 +185,20 @@ This approach ensures that the service can start even if Cosmos DB is temporaril
                 offer_throughput=400
             )
     ```
+    this method has to be added in the start of every other query method in the database.
 
 - **Database methods**: The `CosmosDBService` provides a set of generic CRUD methods and query execution helpers that abstract direct interaction with Cosmos DB:
 
-    - `create_item()`: Inserts a new document into the container. Automatically generates a unique `id` if not provided and validates the presence of a `user_id`.
+    - `create_item()`: Inserts a new document into the container. Automatically generates a unique `id`.
 
     ```python
     def create_item(self, item: dict) -> dict:
+
+        self._ensure_connection()
         try:
             # Ensure unique ID
             if "id" not in item:
                 item["id"] = str(uuid.uuid4())
-
-            if "user_id" not in item:
-                raise DatabaseError("Missing required field: 'user_id'")
 
             created = self._container.create_item(body=item)
             logging.info(f"Item created with id={created['id']}")
@@ -212,6 +212,10 @@ This approach ensures that the service can start even if Cosmos DB is temporaril
 
     ```python
     def read_item(self, item_id: str, partition_key: str) -> dict:
+
+        # Read a single item from the container.
+
+        self._ensure_connection()
         try:
             return self._container.read_item(item=item_id, partition_key=partition_key)
         except exceptions.CosmosResourceNotFoundError:
@@ -224,6 +228,9 @@ This approach ensures that the service can start even if Cosmos DB is temporaril
 
     ```python
     def upsert_item(self, item: dict) -> dict:
+
+        self._ensure_connection()
+
         try:
             if "id" not in item:
                 item["id"] = str(uuid.uuid4())
@@ -243,6 +250,10 @@ This approach ensures that the service can start even if Cosmos DB is temporaril
 
     ```python
     def delete_item(self, item_id: str, partition_key: str) -> None:
+
+        # Delete an item by id.
+        
+        self._ensure_connection()
         try:
             logging.info(f"Attempting to delete item with id={item_id}")
             self._container.delete_item(item=item_id, partition_key=partition_key)
@@ -256,6 +267,10 @@ This approach ensures that the service can start even if Cosmos DB is temporaril
 
     ```python
     def send_query(self, query: str, parameters: list = None) -> list[dict]:
+        
+        # Execute a query against the container.
+
+        self._ensure_connection()
         if parameters is None:
             parameters = []
         try:

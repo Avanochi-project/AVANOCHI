@@ -8,8 +8,7 @@
                 "body": {
                     "username": "string",
                     "password": "string"
-                },
-                "response": {}
+                }
             },
             "login": {
                 "description": "Login a specific user",
@@ -18,13 +17,16 @@
                 "body": {
                     "username": "string",
                     "password": "string"
-                },
-                "response": {
-                    "token": "string"
                 }
+            },
+            "user_info": {
+                "description": "Get user information",
+                "url": "http://localhost:7071/api/auth/user_info/",
+                "method": "GET",
+                "body": {}
             }
         },
-        "description": "Endpoint for user authentication. Expects JSON body with 'username' and 'password'."
+        "description": "Endpoint for user authentication."
     },
     "stats": {
         "routes": {
@@ -34,13 +36,32 @@
                 "method": "GET",
                 "params": {
                     "user_id": "string"
-                },
-                "response": {
-                    "hours_worked": "number",
-                    "tasks_completed": "number"
                 }
             }
         },
         "description": "Endpoint to retrieve user statistics. Requires 'user_id' as a path parameter."
+    },
+    "tasks": {
+        "routes": {
+            "create_task": {
+                "description": "Create a new task",
+                "url": "http://localhost:7071/api/tasks",
+                "method": "POST",
+                "body": {
+                    "title": "string",
+                    "description": "string",
+                    "due_date": "string"
+                }
+            },
+            "get_tasks": {
+                "description": "Get all tasks for a user",
+                "url": "http://localhost:7071/api/tasks/{user_id}",
+                "method": "GET",
+                "params": {
+                    "user_id": "string"
+                }
+            }
+        },
+        "description": "Endpoints to create and retrieve tasks."
     }
 }

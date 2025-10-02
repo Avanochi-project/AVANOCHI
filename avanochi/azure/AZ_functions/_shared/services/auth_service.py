@@ -23,10 +23,28 @@ class AuthenticationService(BaseService):
         if not user:
             raise ValueError("Invalid username or password")
         return self.repo.generate_token(user["id"])
+    
+    def get_user_by_id(self, user_id: str) -> dict | None:
+        return self.repo.get_user_by_id(user_id)
 
-    def validate_token(self, token: str) -> bool:
-        return (
-            self.repo.check_cookie_token({"auth_token": token})["valid"] or
-            self.repo.check_header_token({"Authorization": f"Bearer {token}"})["valid"]
-        )
+    def get_id_from_request(self, req):  
+        user_id = self.repo.get_id_from_token(req)
+        if not user_id:
+            raise ValueError("Invalid or expired token")
+        return user_id
+
+    def validate_token(self, req) -> bool:
+        # First try with cookies
+        cookie_result = self.repo.check_cookie_token(req.cookies)
+        if cookie_result.get("valid"):
+            return True
+
+        # Then try with headers
+        header_result = self.repo.check_header_token(req.headers)
+        if header_result.get("valid"):
+            return True
+
+        # If neither worked, return False
+        return False
+
 
