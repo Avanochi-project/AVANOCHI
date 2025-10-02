@@ -38,10 +38,11 @@ class Endpoint:
         return f"{self.route_name} [{self.method}] {self.url}"
 
 class EndpointGroup:
-    
-    def __init__(self, name: str, endpoints: List[Endpoint]):
+
+    def __init__(self, name: str, endpoints: List[Endpoint], description: str = ""):
         self.name = name
         self.endpoints = endpoints
+        self.description = description
 
     def __str__(self):
         return f"{self.name} ({len(self.endpoints)} routes)"

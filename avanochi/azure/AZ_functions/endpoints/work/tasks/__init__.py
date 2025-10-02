@@ -37,7 +37,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info(f"Tasks function invoked. Method={req.method}")
 
     # AUTHENTICATION
-    if not auth_service.is_authenticated(req):
+    if not auth_service.validate_token(req):
         return _json_response({"error": "Unauthorized"}, 401)
     
     try:
@@ -49,7 +49,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 return _json_response({"error": "Invalid JSON payload"}, 400)
 
             title = (data.get("title") or "").strip()
-            user_id = data.get("user_id")
+            user_id = auth_service.get_id_from_request(req)
 
             try:
                 created = task_service.create_task(user_id, title)
@@ -62,7 +62,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         elif req.method == "GET":
             # List tasks, optionally filtered by user_id
-            user_id = req.params.get("user_id")
+            user_id = auth_service.get_id_from_request(req)
             try:
                 items = task_service.list_tasks(user_id)
                 return _json_response(items, 200)
