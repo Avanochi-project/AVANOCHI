@@ -1,0 +1,57 @@
+<section class="task-log">
+	<!-- Create new task -->
+	<form class="new-task" (ngSubmit)="addTask()">
+		<input type="text" [(ngModel)]="newTaskName" name="taskName" placeholder="Nombre de la tarea" required>
+		<div class="duration">
+			<label for="minutes">Duración prevista</label>
+			<input id="minutes" type="number" min="1" max="1440" [(ngModel)]="newTaskMinutes" name="taskMinutes"> 
+			<span>min</span>
+		</div>
+		<button class="btn primary" type="submit">Añadir</button>
+	</form>
+
+	<!-- List of tasks -->
+	<div class="tasks" *ngIf="tasks && tasks.length; else empty">
+		<div class="task-card" *ngFor="let t of tasks; trackBy: trackById">
+			<div class="task-header">
+				<div class="task-title">
+					<span class="dot" [class.live]="isRunning(t)"></span>
+					<h2 [class.done]="t.done">{{ t.name }}</h2>
+				</div>
+				<div class="elapsed">
+					<span class="label">Tiempo</span>
+					<span class="value">{{ formatElapsed(elapsedMs(t)) }}</span>
+				</div>
+			</div>
+
+			<div class="expected">
+				<label>Previsto</label>
+				<input type="number" min="1" max="1440" [ngModel]="t.expectedDurationMs / 60000" (ngModelChange)="updateExpected(t, $event)"> 
+				<span>min</span>
+			</div>
+
+			<div class="progress">
+				<div class="bar">
+					<div class="fill" [style.width.%]="progressPct(t)"></div>
+				</div>
+				<div class="progress-meta">
+					<span>{{ progressPct(t) | number:'1.0-0' }}%</span>
+					<span>de {{ t.expectedDurationMs / 60000 | number:'1.0-0' }} min</span>
+				</div>
+			</div>
+
+			<div class="controls">
+				<button class="btn secondary" (click)="startTask(t)" [disabled]="isRunning(t) || t.done">Iniciar</button>
+				<button class="btn secondary" (click)="pauseTask(t)" [disabled]="!isRunning(t) || t.done">Pausar</button>
+				<button class="btn primary" (click)="finishTask(t)" [disabled]="t.done">Finalizar</button>
+			</div>
+		</div>
+	</div>
+
+	<ng-template #empty>
+		<div class="empty">
+			<p>Aún no hay tareas.</p>
+			<small>Añade una nueva tarea para empezar a registrar tiempo.</small>
+		</div>
+	</ng-template>
+</section>

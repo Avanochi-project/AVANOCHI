@@ -1,13 +1,13 @@
 import { Component, signal } from '@angular/core';
-// import { RouterOutlet } from '@angular/router';
+import { RouterOutlet } from '@angular/router';
 // ...existing code...
 import { Navbar } from './navbar/navbar';
-import { TasksToday } from './tasks-today/tasks-today';
 // ...existing code...
 
 @Component({
   selector: 'app-root',
-  imports: [Navbar, TasksToday],
+  standalone: true,
+  imports: [Navbar, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

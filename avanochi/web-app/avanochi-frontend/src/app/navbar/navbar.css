@@ -54,6 +54,7 @@
   border-radius: 6px;
   transition: background 0.2s, color 0.2s, box-shadow 0.2s;
   box-shadow: 0 1px 4px rgba(210,91,1,0.06);
+  cursor: pointer;
 }
 .navbar-right a:hover {
   background: #fff7ed;

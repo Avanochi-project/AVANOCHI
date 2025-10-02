@@ -1,12 +1,13 @@
 <nav class="navbar">
   <div class="navbar-left">
-    <img src="public/avanochi_avatar.png" alt="Avatar" class="avatar-icon">
+    <!-- <img src="/public/avanochi_avatar.png" alt="Avanochi mascot avatar smiling in a friendly manner next to the AVANOCHI logo in a clean digital interface" class="avatar-icon"> -->
     <span class="logo">AVANOCHI</span>
   </div>
   <div class="navbar-right">
-    <a routerLink="/" routerLinkActive="active">Inicio</a>
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
     <a routerLink="/tasks" routerLinkActive="active">Tareas</a>
     <a routerLink="/stats" routerLinkActive="active">Estadísticas</a>
     <a routerLink="/profile" routerLinkActive="active">Perfil</a>
   </div>
 </nav>
+
