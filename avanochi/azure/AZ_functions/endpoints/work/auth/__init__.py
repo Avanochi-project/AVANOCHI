@@ -5,6 +5,7 @@ HTTP-triggered Azure Function for user authentication.
 Provides:
  - POST /auth/register   -> register a new user
  - POST /auth/login      -> authenticate a user and return a JWT
+ - GET  /auth/user_info  -> get user info (requires valid JWT in headers or cookies)
 """
 
 import json
@@ -30,58 +31,77 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info(f"Auth function invoked. Method={req.method}")
 
     try:
-        if req.method != "POST":
-            return _json_response({"error": f"Method {req.method} not allowed"}, 405)
+        if req.method == "POST":
 
-        route = req.route_params.get("action")
+            route = req.route_params.get("action")
 
-        # --- Register new user ---
-        if route == "register":
-            try:
-                data = req.get_json()
-            except ValueError:
-                return _json_response({"error": "Invalid JSON payload"}, 400)
+            # --- Register new user ---
+            if route == "register":
+                try:
+                    data = req.get_json()
+                except ValueError:
+                    return _json_response({"error": "Invalid JSON payload"}, 400)
 
-            username = data.get("username")
-            password = data.get("password")
+                username = data.get("username")
+                password = data.get("password")
 
-            if not username or not password:
-                return _json_response({"error": "Fields 'username' and 'password' are required"}, 400)
+                if not username or not password:
+                    return _json_response({"error": "Fields 'username' and 'password' are required"}, 400)
 
-            try:
-                user = auth_service.register(username, password)
-                return _json_response({"message": "User registered successfully", "user": user}, 201)
-            except ValueError as e:
-                return _json_response({"error": str(e)}, 400)
-            except DatabaseError as e:
-                logging.exception("Database error while registering user")
-                return _json_response({"error": str(e)}, 500)
+                try:
+                    user = auth_service.register(username, password)
+                    return _json_response({"message": "User registered successfully", "user": user}, 201)
+                except ValueError as e:
+                    return _json_response({"error": str(e)}, 400)
+                except DatabaseError as e:
+                    logging.exception("Database error while registering user")
+                    return _json_response({"error": str(e)}, 500)
 
-        # --- Login ---
-        elif route == "login":
-            try:
-                data = req.get_json()
-            except ValueError:
-                return _json_response({"error": "Invalid JSON payload"}, 400)
+            # --- Login ---
+            elif route == "login":
+                try:
+                    data = req.get_json()
+                except ValueError:
+                    return _json_response({"error": "Invalid JSON payload"}, 400)
 
-            username = data.get("username")
-            password = data.get("password")
+                username = data.get("username")
+                password = data.get("password")
 
-            if not username or not password:
-                return _json_response({"error": "Fields 'username' and 'password' are required"}, 400)
+                if not username or not password:
+                    return _json_response({"error": "Fields 'username' and 'password' are required"}, 400)
 
-            try:
-                token = auth_service.login(username, password)
-                return _json_response({"token": token}, 200)
-            except ValueError as e:
-                return _json_response({"error": str(e)}, 401)
-            except DatabaseError as e:
-                logging.exception("Database error while logging in user")
-                return _json_response({"error": str(e)}, 500)
+                try:
+                    token = auth_service.login(username, password)
+                    return _json_response({"token": token}, 200)
+                except ValueError as e:
+                    return _json_response({"error": str(e)}, 401)
+                except DatabaseError as e:
+                    logging.exception("Database error while logging in user")
+                    return _json_response({"error": str(e)}, 500)
 
-        else:
-            return _json_response({"error": "Invalid route. Use /auth/register or /auth/login"}, 404)
+            else:
+                return _json_response({"error": "Invalid route. Use /auth/register or /auth/login"}, 404)
 
+        elif req.method == "GET":
+            route = req.route_params.get("action")
+
+            # --- Get user info ---
+            if route == "user_info":
+                try:
+                    user_id = auth_service.get_id_from_request(req)
+                    user = auth_service.get_user_by_id(user_id)
+                    if not user:
+                        return _json_response({"error": "User not found"}, 404)
+                    return _json_response({"user": user}, 200)
+                except ValueError as e:
+                    return _json_response({"error": str(e)}, 401)
+                except DatabaseError as e:
+                    logging.exception("Database error while fetching user info")
+                    return _json_response({"error": str(e)}, 500)
+
+            else:
+                return _json_response({"error": "Invalid route. Use /auth/user"}, 404)
+            
     except Exception as e:
         logging.exception("Unexpected error in auth function")
         return _json_response({"error": "Internal server error", "detail": str(e)}, 500)

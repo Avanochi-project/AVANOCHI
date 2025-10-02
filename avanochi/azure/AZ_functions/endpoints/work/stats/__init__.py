@@ -29,15 +29,13 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info(f"Stats function invoked. Method={req.method}")
 
     # AUTHENTICATION
-    if not auth_service.is_authenticated(req):
+    if not auth_service.validate_token(req):
         return _json_response({"error": "Unauthorized"}, 401)
 
     if req.method != "GET":
         return _json_response({"error": f"Method {req.method} not allowed"}, 405)
 
-    user_id = req.route_params.get("user_id") or req.params.get("user_id")
-    if not user_id:
-        return _json_response({"error": "user_id is required in route or query"}, 400)
+    user_id = auth_service.get_id_from_request(req)
 
     try:
         stats = stats_service.get_user_stats(user_id)
