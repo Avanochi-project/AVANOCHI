@@ -472,12 +472,12 @@ shared/
     Unlike typical repositories, it does not manage a standalone entity. Instead, it encapsulates credential validation and JWT handling, ensuring that services interact with authentication through a clean interface.
 
     Methods:
-    - `hash_password(self, password: str)`: creates a SHA-256 hash of the provided password. Used to store and verify credentials securely.
+    - `hash_password(password: str)`: creates a SHA-256 hash of the provided password. Used to store and verify credentials securely.
         ```python
         def hash_password(self, password: str) -> str:
             return hashlib.sha256(password.encode()).hexdigest()
         ```
-    - `validate_user_credentials(self, username: str, password: str)`: verifies that the provided credentials match an existing user.
+    - `validate_user_credentials(username: str, password: str)`: verifies that the provided credentials match an existing user.
         Returns the user document if valid, otherwise `None`.
         ```python
         def validate_user_credentials(self, username: str, password: str) -> dict | None:
@@ -488,14 +488,26 @@ shared/
                 return None
             return user
         ```
-    - `generate_token(self, user_id: str)`: generates a signed JWT for the given user id, delegating to `AuthManager`.
+    - `generate_token(user_id: str)`: generates a signed JWT for the given user id, delegating to `AuthManager`.
         ```python
         def generate_token(self, user_id: str) -> str:
             return self.auth_manager.generate_token(user_id)
         ```
-    - `verify_token(self, token: str)`: validates a JWT, checking integrity and expiration, and returns the decoded payload.
+    - `check_cookie_token(cookies: dict)`: extracts the token from the cookie, if found, delegates verification to `AuthManager`.
         ```python
-        def verify_token(self, token: str) -> dict:
+        def check_cookie_token(self, cookies: dict) -> dict:
+            token = cookies.get("auth_token")
+            if not token:
+                return {"valid": False, "error": "No token in cookie"}
+            return self.auth_manager.verify_token(token)
+        ```
+    - `check_header_token(headers: dict)`: extracts the token from the header, if found, delegates verification to `AuthManager`.
+        ```python
+        def check_header_token(self, headers: dict) -> dict:
+            auth_header = headers.get("Authorization")
+            if not auth_header or not auth_header.startswith("Bearer "):
+                return {"valid": False, "error": "No Bearer token in Authorization header"}
+            token = auth_header.split(" ", 1)[1]
             return self.auth_manager.verify_token(token)
         ```
 
@@ -698,38 +710,59 @@ shared/
 
     It exposes the following methods to the endpoints:
 
-    - `register(self, username: str, password: str) -> dict`  
+    - `register(self, username: str, password: str)`  
       Registers a new user after validating uniqueness. Password hashing and persistence are delegated to the repository layer. Raises `ValueError` if the username already exists.
 
-      ```python
-      def register(self, username: str, password: str):
-          # Check if user exists
-          if self.repo.user_repo.find_by_name(username):
-              raise ValueError("Username already exists")
+        ```python
+        def register(self, username: str, password: str):
+            # Check if user exists
+            if self.repo.user_repo.find_by_name(username):
+                raise ValueError("Username already exists")
 
-          password_hash = self.repo.hash_password(password)
-          user = {"name": username, "password_hash": password_hash}
-          return self.repo.user_repo.create(user)
-      ```
+            password_hash = self.repo.hash_password(password)
+            user = {"name": username, "password_hash": password_hash}
+            return self.repo.user_repo.create(user)
+        ```
 
-    - `login(self, username: str, password: str) -> str`  
-      Validates credentials via the repository and, on success, returns a signed JWT token. Raises `ValueError` when credentials are invalid.
+    - `login(self, username: str, password: str)`  
+        Validates credentials via the repository and, on success, returns a signed JWT token. Raises `ValueError` when credentials are invalid.
 
-      ```python
-      def login(self, username: str, password: str) -> str:
-          user = self.repo.validate_user_credentials(username, password)
-          if not user:
-              raise ValueError("Invalid username or password")
-          return self.repo.generate_token(user["id"])
-      ```
+        ```python
+        def login(self, username: str, password: str) -> str:
+            user = self.repo.validate_user_credentials(username, password)
+            if not user:
+                raise ValueError("Invalid username or password")
+            return self.repo.generate_token(user["id"])
+        ```
 
-    - `validate_token(self, token: str) -> dict`  
-      Delegates token verification to the repository and returns the decoded claims or an error structure (repository handles cryptographic validation and error translation).
+    - `validate_token(self, token: str)`  
+        Delegates to `AuthRepository` by passing the cookies and headers, returns `true` if either methods found and accepted the token from `AuthManager`
+        ```python
+        def validate_token(self, token: str) -> bool:
+            return (
+                self.repo.check_cookie_token({"auth_token": token})["valid"] or
+                self.repo.check_header_token({"Authorization": f"Bearer {token}"})["valid"]
+            )
+        ```
 
-      ```python
-      def validate_token(self, token: str):
-          return self.repo.verify_token(token)
-      ```
+    It is important to mention that the implementation of this service in the endpoints is flexible for all of them, so the authentication for each request must be used in the following way:
+
+    ```python
+    # Initialize service once
+    factory = ServiceFactory()
+    auth_service = factory.get_auth_service()
+
+    def main(req: func.HttpRequest) -> func.HttpResponse:
+        logging.info(f"[ENDPOINT] function invoked. Method={req.method}")
+
+        # AUTHENTICATION
+        if not auth_service.is_authenticated(req):
+            return _json_response({"error": "Unauthorized"}, 401)
+
+        # Rest of the method
+    ```
+
+    In the end, we only need to initialize `AuthService` through the `ServiceFactory` and implement the authentication code in the `main` method.
 
 
 - **StatsService**
