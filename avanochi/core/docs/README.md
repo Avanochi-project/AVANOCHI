@@ -1,4 +1,3 @@
-
 <p align="center">
     <img src="../../../assets/avanochi/art/avanochi_portrait.png" alt="Avanochi Portrait"/>
 </p>
@@ -16,13 +15,15 @@
             - [`.shared` Architecture](#shared-architecture)
                 - [Credential Manager](#credential-manager)
                 - [Database: CosmosDB](#database-cosmosdb)
+                - [Authentication Manager](#authentication-manager)
                 - [Entities](#entities)
                 - [Repositories](#repositories)
                 - [Services](#services)
-            - [`work` Directory](#work-directory)
+            - [Endpoints: `work` Directory](#endpoints-work-directory)
+                - [Auth Endpoint](#auth-endpoint)
+                - [Stats Endpoint](#stats-endpoint)
                 - [Tasks Endpoint](#tasks-endpoint)
                 - [WorkSessions Endpoint](#worksessions-endpoint)
-                - [Stats Endpoint](#stats-endpoint)
     - [1.2 Azure Functions Testing](#12-azure-functions-testing)
         - [1.2.1 `function_app.py`: central endpoint manager](#121-function_apppy-central-endpoint-manager)
         - [1.2.2 Virtual environment](#122-virtual-environment)
@@ -922,6 +923,91 @@ It exposes three main endpoints — **tasks**, **work_sessions**, and **stats** 
 Together, they provide the minimal viable product (MVP) for tracking productivity:  
 users can create and complete tasks, log their working sessions, and retrieve basic performance statistics.
 
+##### Auth Endpoint
+
+The **Auth** endpoint handles user authentication and registration.  
+It provides the foundation for secure access to the system by managing user credentials and issuing JWT tokens for authenticated sessions.  
+This endpoint ensures that only valid users can log in and that new users are registered correctly in the database.
+
+- **POST /auth/register**  
+    Registers a new user.  
+    The endpoint expects a JSON payload containing `username` and `password`. Both fields are required.  
+    It delegates user creation to `auth_service.register(username, password)` which validates input and persists the new user in the database.  
+    - On success, it returns **201 Created** with a message and user details.  
+    - If fields are missing or invalid, it returns **400 Bad Request**.  
+    - Database errors are logged and returned as **500 Internal Server Error**.  
+
+    ```python
+    def main(req: func.HttpRequest) -> func.HttpResponse:
+        logging.info(f"Auth function invoked. Method={req.method}")
+
+        # Rest of the method
+
+        if route == "register":
+            try:
+                data = req.get_json()
+            except ValueError:
+                return _json_response({"error": "Invalid JSON payload"}, 400)
+
+            username = data.get("username")
+            password = data.get("password")
+
+            if not username or not password:
+                return _json_response({"error": "Fields 'username' and 'password' are required"}, 400)
+
+            try:
+                user = auth_service.register(username, password)
+                return _json_response({"message": "User registered successfully", "user": user}, 201)
+            except ValueError as e:
+                return _json_response({"error": str(e)}, 400)
+            except DatabaseError as e:
+                logging.exception("Database error while registering user")
+                return _json_response({"error": str(e)}, 500)
+    ```
+
+- **POST /auth/login**  
+    Authenticates an existing user and returns a JWT token.  
+    The endpoint expects a JSON payload with `username` and `password`.  
+    Authentication is delegated to `auth_service.login(username, password)`, which verifies credentials and issues a token.  
+    - On success, it returns **200 OK** with the JWT token.  
+    - Invalid credentials result in **401 Unauthorized**.  
+    - Database errors are logged and returned as **500 Internal Server Error**.  
+
+    ```python
+    def main(req: func.HttpRequest) -> func.HttpResponse:
+        logging.info(f"Auth function invoked. Method={req.method}")
+
+        # Rest of the method
+
+        elif route == "login":
+            try:
+                data = req.get_json()
+            except ValueError:
+                return _json_response({"error": "Invalid JSON payload"}, 400)
+
+            username = data.get("username")
+            password = data.get("password")
+
+            if not username or not password:
+                return _json_response({"error": "Fields 'username' and 'password' are required"}, 400)
+
+            try:
+                token = auth_service.login(username, password)
+                return _json_response({"token": token}, 200)
+            except ValueError as e:
+                return _json_response({"error": str(e)}, 401)
+            except DatabaseError as e:
+                logging.exception("Database error while logging in user")
+                return _json_response({"error": str(e)}, 500)
+    ```
+
+- **Error handling**  
+    - If a non-POST method is used, the endpoint returns **405 Method Not Allowed**.  
+    - Routes other than `register` or `login` return **404 Not Found**.  
+    - Unexpected exceptions are caught, logged, and returned as **500 Internal Server Error** with details.
+
+<div class="page-break"></div>
+
 ##### Stats Endpoint
 
 The **Stats** endpoint provides aggregated insights about a user’s productivity.  
@@ -985,6 +1071,7 @@ This endpoint ensures users can easily record their daily goals and track progre
 
     ```python
     def main(req: func.HttpRequest) -> func.HttpResponse:
+        logging.info(f"Tasks function invoked. Method={req.method}")
 
         # rest of the method
 
@@ -1017,6 +1104,7 @@ This endpoint ensures users can easily record their daily goals and track progre
 
     ```python
     def main(req: func.HttpRequest) -> func.HttpResponse:
+        logging.info(f"Tasks function invoked. Method={req.method}")
 
         # rest of the method
 
@@ -1040,6 +1128,7 @@ This endpoint ensures users can easily record their daily goals and track progre
 
     ```python
     def main(req: func.HttpRequest) -> func.HttpResponse:
+        logging.info(f"Tasks function invoked. Method={req.method}")
 
         # rest of the method
 
@@ -1073,21 +1162,18 @@ It is powered by the `WorkSessionService`, which encapsulate business logic.
     Manage work sessions for a user. This endpoint supports two actions: starting a new session or ending an existing one.  
 
     - **Start a session** (`POST /work_sessions/start`)  
-      Requires a `user_id` in the request body. The endpoint validates the input and checks if an active session already exists for the user.  
-      If no active session exists, it delegates to `WorkSessionService.start_session(user_id)`, which creates a new `WorkSession` entity with the current UTC timestamp as `start_time` and persists it.  
-      If `user_id` is missing, the function responds with **400**; if an active session already exists, it responds with **400**; if database persistence fails, it logs the error and returns **500**.  
-      On success, the response includes the session’s metadata (UUID, start time).  
-
-    - **End a session** (`POST /work_sessions/{id}/end`)  
-      Expects the session `id` in the route. The endpoint calls `WorkSessionService.end_session(session_id)`, which updates the session by setting its `end_time`.  
-      If the session is not found, it responds with **404**; for other database errors, it responds with **500**.  
+        Requires a `user_id` in the request body. The endpoint validates the input and checks if an active session already exists for the user.  
+        If no active session exists, it delegates to `WorkSessionService.start_session(user_id)`, which creates a new `WorkSession` entity with the current UTC timestamp as `start_time` and persists it.  
+        If `user_id` is missing, the function responds with **400**; if an active session already exists, it responds with **400**; if database persistence fails, it logs the error and returns **500**.  
+        On success, the response includes the session’s metadata (UUID, start time).  
 
     ```python
     def main(req: func.HttpRequest) -> func.HttpResponse:
+        logging.info(f"WorkSessions function invoked. Method={req.method}")
 
-    # rest of the method
+        # rest of the method
 
-    # --- Start session ---
+        # --- Start session ---
         if req.method == "POST" and route == "start":
             try:
                 data = req.get_json()
@@ -1109,7 +1195,18 @@ It is powered by the `WorkSessionService`, which encapsulate business logic.
             except DatabaseError as e:
                 logging.exception("Database error while starting session")
                 return _json_response({"error": str(e)}, 500)
+    ```
 
+    - **End a session** (`POST /work_sessions/{id}/end`)  
+        Expects the session `id` in the route. The endpoint calls `WorkSessionService.end_session(session_id)`, which updates the session by setting its `end_time`.  
+        If the session is not found, it responds with **404**; for other database errors, it responds with **500**.  
+
+    ```python
+    def main(req: func.HttpRequest) -> func.HttpResponse:
+        logging.info(f"WorkSessions function invoked. Method={req.method}")
+
+        # rest of the method
+            
         # --- End session ---
         elif req.method == "POST" and route:
             session_id = route
@@ -1120,7 +1217,7 @@ It is powered by the `WorkSessionService`, which encapsulate business logic.
                 msg = str(e)
                 logging.exception(f"Error ending session {session_id}")
                 if "not found" in msg.lower():
-                    return _json_response({"error": msg}, 404)
+                     return _json_response({"error": msg}, 404)
                 return _json_response({"error": msg}, 500)
     ```
 
@@ -1134,28 +1231,31 @@ It is powered by the `WorkSessionService`, which encapsulate business logic.
 
     ```python
     def main(req: func.HttpRequest) -> func.HttpResponse:
-        
-    # rest of the method
+        logging.info(f"WorkSessions function invoked. Method={req.method}")
 
-    # --- Get active session ---
-    if req.method == "GET" and route == "active":
-        user_id = req.params.get("user_id")
-        if not user_id:
-            return _json_response({"error": "Query parameter 'user_id' is required"}, 400)
+        # rest of the method
 
-        try:
-            active = ws_service.get_active_session(user_id)
-            if active:
-                return _json_response(active, 200)
-            else:
-                return _json_response({"active": False}, 200)
-        except DatabaseError as e:
-            logging.exception("Database error while checking active session")
-            return _json_response({"error": str(e)}, 500)
+        # --- Get active session ---
+        if req.method == "GET" and route == "active":
+            user_id = req.params.get("user_id")
+            if not user_id:
+                return _json_response({"error": "Query parameter 'user_id' is required"}, 400)
 
-    else:
-        return _json_response({"error": f"Method {req.method} with route not supported"}, 405)
+            try:
+                active = ws_service.get_active_session(user_id)
+                if active:
+                    return _json_response(active, 200)
+                else:
+                    return _json_response({"active": False}, 200)
+            except DatabaseError as e:
+                logging.exception("Database error while checking active session")
+                return _json_response({"error": str(e)}, 500)
+
+        else:
+            return _json_response({"error": f"Method {req.method} with route not supported"}, 405)
     ```
+
+<div class="page-break"></div>
 
 ## 1.2 Azure Functions Testing
 
@@ -1199,6 +1299,8 @@ def stats(req: func.HttpRequest) -> func.HttpResponse:
     return stats_main(req)
 ```
 This code is from the **first phase** of the proyect, so it only includes 3 endpoints.
+
+<div class="page-break"></div>
 
 ### 1.2.2 Virtual environment
 
@@ -1246,6 +1348,8 @@ COSMOS_DB_CONTAINER=avanochi-container
 COSMOS_DB_URI=https://avanochi-cosmosdb.documents.azure.com:443/
 COSMOS_DB_PRIMARY_KEY=[SECRET]
 ```
+
+<div class="page-break"></div>
 
 ### 1.2.4 Final testing
 
