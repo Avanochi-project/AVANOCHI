@@ -39,7 +39,13 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         stats = stats_service.get_user_stats(user_id)
-        return _json_response(stats, 200)
+        return _json_response(
+        {
+            "user_id": stats["user_id"],
+            "hours_worked": stats["hours_worked"],
+            "tasks_completed": stats["tasks_completed"]
+        }
+        , 200)
 
     except DatabaseError as e:
         logging.exception("Database error while generating stats")

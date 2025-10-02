@@ -9,7 +9,6 @@ class Endpoint:
         url: str,
         method: str,
         params: Optional[Dict[str, Any]] = None,
-        body: Optional[Dict[str, Any]] = None,
         response: Optional[Dict[str, Any]] = None,
         description: str = ""
     ):
@@ -17,7 +16,6 @@ class Endpoint:
         self.url = url
         self.method = method.upper()
         self.params = params or {}
-        self.body = body or {}
         self.response = response or {}
         self.description = description
 
@@ -27,13 +25,13 @@ class Endpoint:
             final_url = final_url.replace(f"{{{key}}}", str(value))
         return final_url
 
-    def prepare_body(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        final_body = {}
-        for key in self.body:
+    def prepare_params(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        final_params = {}
+        for key in self.params:
             if key in inputs:
-                final_body[key] = inputs[key]
-        return final_body
-
+                final_params[key] = inputs[key]
+        return final_params
+    
     def __str__(self):
         return f"{self.route_name} [{self.method}] {self.url}"
 

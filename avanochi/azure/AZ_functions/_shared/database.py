@@ -41,7 +41,7 @@ class CosmosDBService:
             # Ensure the container exists
             self._container = self._database.create_container_if_not_exists(
                 id=container_name,
-                partition_key=PartitionKey(path="/id"),  # TODO: change to /user_id in Phase 2
+                partition_key=PartitionKey(path="/id"),
                 offer_throughput=400
             )
 

@@ -25,13 +25,6 @@ class AuthRepository:
     def get_user_by_id(self, user_id: str) -> dict | None:
         return self.user_repo.get_user(user_id)
 
-    def get_id_from_token(self, token: str) -> dict | None:
-        payload = self.auth_manager.verify_token(token)
-        if not payload or "user_id" not in payload:
-            return None
-        user_id = payload["user_id"]
-        return user_id
-
     def check_cookie_token(self, cookies: dict) -> dict:
         token = cookies.get("auth_token")
         if not token:

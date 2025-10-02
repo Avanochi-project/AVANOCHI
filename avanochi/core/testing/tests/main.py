@@ -1,10 +1,12 @@
 # main.py
-
+import os
 from src.database import load_endpoint_groups
-from src.uix import select_endpoint_group, select_endpoint, fill_endpoint_body, clear_screen
+from src.uix import select_endpoint_group, select_endpoint, fill_endpoint_body, clear_screen, print_API_response
 from src.http_client import HttpClient
 
 client = HttpClient()
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ENDPOINTS_FILE = os.path.join(BASE_DIR, "endpoints.json")
 
 def login():
     
@@ -43,7 +45,7 @@ def main():
     """
     # Load endpoint groups
     clear_screen()
-    domain_groups = load_endpoint_groups("endpoints.json")
+    domain_groups = load_endpoint_groups(ENDPOINTS_FILE)
 
     # Create HTTP client (base_url can be empty if endpoints have full URL)
 
@@ -61,7 +63,7 @@ def main():
 
         # Prepare URL and body
         url = selected_endpoint.prepare_url(body_data)
-        body = selected_endpoint.prepare_body(body_data)
+        body = selected_endpoint.prepare_params(body_data)
 
         print("\nDEBUG: sending body:", body)
         print("DEBUG: to URL:", url)
@@ -83,10 +85,12 @@ def main():
 
             # Try to display JSON response, fallback to text
             try:
-                print("\nResponse from endpoint:")
-                print(response.json())
+                response_data = response.json()
+                print_API_response(selected_endpoint, response_data)
             except Exception:
+                print("\nRaw response:")
                 print(response.text)
+
 
         except Exception as e:
             print(f"\nRequest failed: {e}")
