@@ -1,0 +1,191 @@
+<section class="task-log">
+	<!-- Summary + search -->
+	<div class="header-row">
+		<div class="search">
+			<input type="search" [(ngModel)]="searchTerm" placeholder="Buscar por nombre, tag o descripción…">
+			<select [(ngModel)]="filterPriority">
+				<option value="all">Todas las prioridades</option>
+				<option value="high">Alta</option>
+				<option value="medium">Media</option>
+				<option value="low">Baja</option>
+			</select>
+			<select [(ngModel)]="filterStatus">
+				<option value="all">Todos los estados</option>
+				<option value="running">En curso</option>
+				<option value="paused">Pausadas</option>
+				<option value="done">Finalizadas</option>
+			</select>
+		</div>
+	</div>
+	<div class="summary-cards">
+		<div class="card">
+			<div class="label">Total</div>
+			<div class="value">{{ summary.count }}</div>
+		</div>
+		<div class="card">
+			<div class="label">Activas</div>
+			<div class="value">{{ summary.running }}</div>
+		</div>
+		<div class="card">
+			<div class="label">Finalizadas</div>
+			<div class="value">{{ summary.done }}</div>
+		</div>
+		<div class="card wide">
+			<div class="label">Tiempo acumulado</div>
+			<div class="value mono">{{ formatElapsed(summary.totalElapsed) }}</div>
+		</div>
+		<div class="card full action">
+			<button class="btn primary block with-icon" [class.open]="showNewTask" (click)="showNewTask = !showNewTask" [attr.aria-expanded]="showNewTask" aria-controls="create-task-panel">
+				<span class="btn-icon" aria-hidden="true">{{ showNewTask ? '−' : '+' }}</span>
+				<span>{{ showNewTask ? 'Ocultar' : 'Crear tarea' }}</span>
+			</button>
+		</div>
+	</div>
+
+		<!-- Create new task (toggle) -->
+			<div id="create-task-panel" class="collapsible" [class.open]="showNewTask">
+			<form class="new-task panel" (ngSubmit)="addTask()">
+				<div class="panel-header">Nueva tarea</div>
+				<div class="panel-body">
+					<div class="grid">
+						<div class="col">
+							<label>Nombre</label>
+							<input type="text" [(ngModel)]="newTaskName" name="taskName" placeholder="Nombre de la tarea" required>
+						</div>
+						<div class="col">
+							<label>Duración prevista</label>
+							<div class="duration">
+								<input id="minutes" type="number" min="1" max="1440" [(ngModel)]="newTaskMinutes" name="taskMinutes"> 
+								<span>min</span>
+							</div>
+						</div>
+						<div class="col">
+							<label>Prioridad</label>
+							<select [(ngModel)]="newTaskPriority" name="taskPrio">
+								<option value="high">Alta</option>
+								<option value="medium">Media</option>
+								<option value="low">Baja</option>
+							</select>
+						</div>
+						<div class="col wide">
+							<label>Descripción</label>
+							<textarea [(ngModel)]="newTaskDescription" name="taskDesc" rows="3" placeholder="Describe el objetivo o pasos clave…"></textarea>
+						</div>
+						<div class="col wide">
+							<label>Tags</label>
+							<input type="text" [(ngModel)]="newTaskTags" name="taskTags" placeholder="Escribe y separa por comas: UI,Frontend,Testing">
+							<div class="chip-row">
+								<span class="chip" *ngFor="let tag of parseTags(newTaskTags)">{{ tag }}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="panel-actions">
+					<button class="btn primary" type="submit">Añadir</button>
+					<button class="btn secondary" type="button" (click)="showNewTask=false">Cancelar</button>
+				</div>
+			</form>
+			</div>
+
+	<!-- View selector -->
+	<div class="tabs">
+		<div class="tabs emphasized">
+			<button class="tab compact-toggle" (click)="compactMode = !compactMode">{{ compactMode ? 'Vista expandida' : 'Vista compacta' }}</button>
+			<button class="tab" [class.active]="currentView==='yesterday'" (click)="setView('yesterday')">
+				Ayer <span class="badge">{{ counts.yesterday }}</span>
+			</button>
+			<button class="tab" [class.active]="currentView==='today'" (click)="setView('today')">
+				Hoy <span class="badge">{{ counts.today }}</span>
+			</button>
+			<button class="tab" [class.active]="currentView==='week'" (click)="setView('week')">
+				Semana <span class="badge">{{ counts.week }}</span>
+			</button>
+		</div>
+	</div>
+
+	<!-- List of tasks -->
+	<div class="tasks" *ngIf="filtered && filtered.length; else empty">
+		<div class="task-card" [class.compact]="compactMode" *ngFor="let t of filtered; trackBy: trackById">
+			<div class="task-header">
+				<div class="task-title">
+					<span class="dot" [class.live]="isRunning(t)"></span>
+					<h2 [class.done]="t.done">{{ t.name }}</h2>
+					<span class="tag" *ngFor="let tag of t.tags">{{ tag }}</span>
+				</div>
+				<div class="elapsed">
+					<span class="label">Tiempo</span>
+					<span class="value">{{ formatElapsed(elapsedMs(t)) }}</span>
+				</div>
+			</div>
+
+			<div class="meta">
+				<span class="priority" [class]="priorityClass(t.priority)">Prioridad: {{ t.priority || 'low' }}</span>
+				<span class="desc" *ngIf="t.description">{{ t.description }}</span>
+				<span class="overtime" *ngIf="isOvertime(t)">Sobretiempo +{{ formatElapsed(overtimeMs(t)) }}</span>
+				<span class="subs-summary" *ngIf="subtaskCounts(t).total && compactMode">
+					{{ subtaskCounts(t).done }}/{{ subtaskCounts(t).total }}
+					<span class="mini-bar">
+						<span class="mini-fill" [style.width.%]="subtaskCounts(t).pct"></span>
+					</span>
+				</span>
+			</div>
+
+			<div class="expected">
+				<label>Previsto</label>
+				<input type="number" min="1" max="1440" [ngModel]="t.expectedDurationMs / 60000" (ngModelChange)="updateExpected(t, $event)"> 
+				<span>min</span>
+			</div>
+
+			<div class="progress" [ngClass]="progressClass(t)">
+				<div class="bar">
+					<div class="fill" [style.width.%]="progressPct(t)"></div>
+				</div>
+				<div class="progress-meta">
+					<span>{{ progressPct(t) | number:'1.0-0' }}%</span>
+					<span>de {{ t.expectedDurationMs / 60000 | number:'1.0-0' }} min</span>
+				</div>
+			</div>
+
+			<!-- Subtasks / Checklist -->
+			<div class="subtasks" *ngIf="!compactMode">
+				<div class="subtask" *ngFor="let s of t.subtasks; let i = index" draggable="true"
+					(dragstart)="onSubtaskDragStart(t, i, $event)"
+					(dragover)="onSubtaskDragOver(t, i, $event)"
+					(drop)="onSubtaskDrop(t, i, $event)"
+					(dragend)="onSubtaskDragEnd($event)">
+					<label>
+						<input type="checkbox" [checked]="s.done" (change)="toggleSubtask(t, s)">
+						<span [class.done]="s.done">{{ s.text }}</span>
+					</label>
+					<button class="btn tiny danger" (click)="removeSubtask(t, s)">×</button>
+				</div>
+				<div class="subtask-new">
+					<input type="text" [(ngModel)]="t.newSubtaskText" placeholder="Añadir subtarea…">
+					<button class="btn tiny secondary" (click)="addSubtask(t)">Añadir</button>
+				</div>
+			</div>
+
+			<!-- Notes -->
+			<div class="notes" *ngIf="!compactMode">
+				<button class="link" (click)="t.openNotes = !t.openNotes">{{ t.openNotes ? 'Ocultar notas' : 'Notas rápidas' }}</button>
+				<div class="panel" *ngIf="t.openNotes">
+					<textarea [(ngModel)]="t.notes" rows="3" placeholder="Escribe notas rápidas para esta tarea…"></textarea>
+				</div>
+			</div>
+
+			<div class="controls">
+				<button class="btn secondary" (click)="startTask(t)" [disabled]="isRunning(t) || t.done">Iniciar</button>
+				<button class="btn secondary" (click)="pauseTask(t)" [disabled]="!isRunning(t) || t.done">Pausar</button>
+				<button class="btn primary" (click)="finishTask(t)" [disabled]="t.done">Finalizar</button>
+				<button class="btn danger" (click)="deleteTask(t)">×</button>
+			</div>
+		</div>
+	</div>
+
+	<ng-template #empty>
+		<div class="empty">
+			<p>Aún no hay tareas.</p>
+			<small>Añade una nueva tarea para empezar a registrar tiempo.</small>
+		</div>
+	</ng-template>
+</section>
