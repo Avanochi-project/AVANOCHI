@@ -2,23 +2,27 @@
 
 import json
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from src.endpoint import Endpoint, EndpointGroup
 
 def clear_screen():
     # Clear terminal screen, cross-platform.
     os.system("cls" if os.name == "nt" else "clear")
+    return None
 
-def draw_panel(title: str, lines: List[str]) -> None:
-    # Print a simple ASCII panel with a title and lines of text.
-    width = max(len(title), *(len(line) for line in lines)) + 4
+def draw_panel(title: str, lines: Optional[List[str]] = None) -> None:
+    # Print a simple ASCII panel with a title and optional lines of text.
+    lines = lines or []  # si es None, lo convertimos en lista vacía
+    width = max(len(title), *(len(line) for line in lines)) + 4 if lines else len(title) + 4
+
     print("+" + "-" * width + "+")
     print(f"| {title.center(width - 2)} |")
     print("+" + "-" * width + "+")
-    for line in lines:
-        print(f"| {line.ljust(width - 2)} |")
-    print("+" + "-" * width + "+")
 
+    if lines:
+        for line in lines:
+            print(f"| {line.ljust(width - 2)} |")
+        print("+" + "-" * width + "+")
 
 def select_endpoint_group(domain_groups: List[EndpointGroup]) -> int:
 
@@ -77,12 +81,11 @@ def print_API_response(endpoint, response_data: dict):
     Pretty print the response based on the endpoint's response schema.
     Falls back to printing raw JSON if schema not available or doesn't match.
     """
+    clear_screen()
     response_schema = getattr(endpoint, "response", None)
+    title = f"API RESPONSE: {endpoint.route_name}"
 
-    print("\n+---------------------------+")
-    print("|       API RESPONSE        |")
-    print("+---------------------------+")
-
+    draw_panel(title, None)
     if not response_schema:
         # No schema provided, just dump the whole JSON nicely
         print(json.dumps(response_data, indent=4))

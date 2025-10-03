@@ -7,7 +7,7 @@
             "direction": "in",
             "name": "req",
             "methods": ["get"],
-            "route": "stats/{user_id}"
+            "route": "stats"
         },
         {
             "type": "http",

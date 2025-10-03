@@ -3,7 +3,7 @@
 """
 HTTP-triggered Azure Function for statistics (Phase 1).
 Provides:
- - GET /stats/{user_id} -> hours worked + tasks completed
+ - GET /stats -> hours worked + tasks completed
 """
 
 import json
@@ -35,13 +35,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     if req.method != "GET":
         return _json_response({"error": f"Method {req.method} not allowed"}, 405)
 
-    user_id = auth_service.get_id_from_request(req)
+    user_id = auth_service.validate_token(req)
 
     try:
         stats = stats_service.get_user_stats(user_id)
         return _json_response(
         {
             "user_id": stats["user_id"],
+            "username": stats["username"],
             "hours_worked": stats["hours_worked"],
             "tasks_completed": stats["tasks_completed"]
         }

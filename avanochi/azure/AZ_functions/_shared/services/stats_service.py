@@ -1,13 +1,15 @@
 from _shared.services.base_service import BaseService
 from _shared.repos.stats_repo import StatsRepository
 from _shared.repos.work_session_repo import WorkSessionRepository
+from _shared.repos.user_repo import UserRepository
 
 class StatsService(BaseService):
     # Service layer for user productivity statistics.
 
-    def __init__(self, stats_repo: StatsRepository = None, ws_repo: WorkSessionRepository = None):
+    def __init__(self, stats_repo: StatsRepository = None, ws_repo: WorkSessionRepository = None, user_repo: UserRepository = None):
         self.stats_repo = stats_repo
         self.ws_repo = ws_repo
+        self.user_repo = user_repo
 
     def get_entity_type(self) -> str:
         return "Stats"
@@ -19,12 +21,14 @@ class StatsService(BaseService):
         # Hours worked
         sessions = self.ws_repo.list_sessions(user_id)
         total_hours = sum(float(s["duration"]) for s in sessions if s.get("duration"))
+        username = self.user_repo.get_user(user_id)["name"]
 
         # Tasks completed
         tasks_completed = self.stats_repo.count_completed_tasks(user_id)
 
         return {
             "user_id": user_id,
+            "username": username,
             "hours_worked": round(total_hours, 2),
             "tasks_completed": tasks_completed
         }

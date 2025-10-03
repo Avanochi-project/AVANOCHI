@@ -12,13 +12,13 @@ class WorkSessionService(BaseService):
         self.repo = repo
 
     def get_entity_type(self) -> str:
-        return "WorkSession"
+        return self.repo.entity_type()
 
     def start_session(self, user_id: str):
         if not user_id:
             raise ValueError("User ID is required to start a session")
         session = WorkSession(user_id)
-        return self.repo.start_session(session)
+        return self.repo.start_session(session.to_dict())
 
     def end_session(self, session_id: str):
         return self.repo.end_session(session_id)

@@ -9,6 +9,7 @@ class Task:
         self.id = str(uuid.uuid4())
         self.title = title
         self.completed = completed
+        self.duration = None
         self.created_at = datetime.utcnow().isoformat()
         self.updated_at = None
 

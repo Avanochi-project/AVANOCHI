@@ -13,12 +13,12 @@ def work_sessions(req: func.HttpRequest) -> func.HttpResponse:
     return work_sessions_main(req)
 
 @app.function_name(name="Tasks")
-@app.route(route="tasks/{id?}", methods=["GET", "POST", "PATCH"])
+@app.route(route="tasks", methods=["GET", "POST", "PATCH"])
 def tasks(req: func.HttpRequest) -> func.HttpResponse:
     return tasks_main(req)
 
 @app.function_name(name="Stats")
-@app.route(route="stats/{user_id}", methods=["GET"])
+@app.route(route="stats", methods=["GET"])
 def stats(req: func.HttpRequest) -> func.HttpResponse:
     return stats_main(req)
 

@@ -41,7 +41,7 @@ class ServiceFactory:
         return TaskService(self._task_repo)
 
     def get_stats_service(self) -> StatsService:
-        return StatsService(self._stats_repo, self._ws_repo)
+        return StatsService(self._stats_repo, self._ws_repo, self._user_repo)
 
     def get_work_session_service(self) -> WorkSessionService:
         return WorkSessionService(self._ws_repo)

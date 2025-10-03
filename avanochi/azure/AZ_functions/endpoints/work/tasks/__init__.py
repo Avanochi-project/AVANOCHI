@@ -49,7 +49,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
             title = (data.get("title") or "").strip()
             duration = data.get("duration")
-            user_id = auth_service.get_id_from_request(req)
+            user_id = auth_service.validate_token(req)
 
             try:
                 created = task_service.create_task(user_id, title, duration)
@@ -66,7 +66,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         elif req.method == "GET":
             # List tasks, optionally filtered by user_id
-            user_id = auth_service.get_id_from_request(req)
+            user_id = auth_service.validate_token(req)
             try:
                 items = task_service.list_tasks(user_id)
                 return _json_response(
@@ -81,16 +81,22 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         elif req.method == "PATCH":
             # Partial update — used to mark a task as completed.
             task_id = req.route_params.get("id") or req.params.get("id")
+            try:
+                # Parse JSON body
+                body = req.get_json()
+            except ValueError:
+                return _json_response({"error": "Invalid JSON body"}, 400)
+
+            task_id = body.get("task_id")
             if not task_id:
-                return _json_response(
-                    {"error": "Task id is required in route (tasks/{id})"}, 400
-                )
+                return _json_response({"error": "Task id is required in body"}, 400)
 
             try:
                 updated = task_service.complete_task(task_id)
                 return _json_response(
                 {
                     "task_id": updated["id"],
+                    "task_title": updated["title"],
                     "completed": updated["completed"]
                 }
                 , 200)
