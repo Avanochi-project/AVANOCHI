@@ -8,40 +8,112 @@
       </div>
     </div>
     <div class="jornada-block">
+      <div class="jornada-header">
+        <span class="status-pill" [class.idle]="workStatus() === 'idle'" [class.running]="workStatus() === 'running'" [class.paused]="workStatus() === 'paused'" [class.finished]="workStatus() === 'finished'">{{ statusLabel() }}</span>
+      </div>
+      <div class="jornada-timer">{{ timer() }}</div>
+      <div class="jornada-progress" [attr.aria-valuenow]="dayProgressPercent()" aria-valuemin="0" aria-valuemax="100" role="progressbar">
+        <div class="progress-fill" [style.width.%]="dayProgressPercent()"></div>
+        <div class="progress-meta">{{ dayProgressPercent() }}% de la jornada (8h)</div>
+      </div>
       <div class="jornada-btns">
-  <button (click)="registrarInicio()" [disabled]="!!jornadaInicio()">Iniciar jornada</button>
-  <button (click)="pausarTimer()" [disabled]="!jornadaInicio() || !!jornadaFin() || timerPaused()">Pausar</button>
-  <button (click)="reanudarTimer()" [disabled]="!timerPaused() || !!jornadaFin()">Reanudar</button>
-  <button (click)="registrarFin()" [disabled]="!jornadaInicio() || !!jornadaFin()">Finalizar jornada</button>
+        <button (click)="registrarInicio()" [disabled]="!!jornadaInicio()">Iniciar jornada</button>
+        <button (click)="pausarTimer()" [disabled]="!jornadaInicio() || !!jornadaFin() || timerPaused()">Pausar</button>
+        <button (click)="reanudarTimer()" [disabled]="!timerPaused() || !!jornadaFin()">Reanudar</button>
+        <button (click)="registrarFin()" [disabled]="!jornadaInicio() || !!jornadaFin()">Finalizar</button>
       </div>
       <div class="jornada-info">
-        <span *ngIf="!jornadaFin()" class="timer-label"><strong>Tiempo de jornada actual:</strong> <span class="timer-value">{{ timer() }}</span></span>
-        <span *ngIf="jornadaFin()" class="timer-label"><strong>Tiempo final:</strong> <span class="timer-value">{{ timer() }}</span></span>
-  <div *ngIf="jornadaFin()" class="jornada-completada"><strong>✅ Jornada completada. ¡Buen trabajo!</strong></div>
+        <div *ngIf="jornadaFin() && showEndBanner()" class="end-toast" role="status" aria-live="polite">
+          <span class="toast-text">✅ Jornada finalizada — Total: <strong>{{ timer() }}</strong></span>
+          <button class="toast-dismiss" (click)="dismissEndBanner()" aria-label="Cerrar aviso">×</button>
+        </div>
       </div>
     </div>
     <div class="user-stats-preview">
-      <h3>Estadísticas de tu última semana</h3>
-      <ul>
-        <li><strong>Tareas completadas:</strong> 12</li>
-        <li><strong>Tareas pendientes:</strong> 3</li>
-        <li><strong>Días productivos:</strong> 5</li>
-        <li><strong>Mejor día:</strong> Jueves</li>
-      </ul>
+      <h3>Resumen rápido de estadísticas</h3>
+      <div class="stats-grid">
+        <div class="stat-card done">
+          <div class="stat-title">Hechas</div>
+          <div class="stat-value">{{ doneCount() }}</div>
+          <div class="stat-sub">de {{ totalCount() }} tareas</div>
+        </div>
+        <div class="stat-card pending">
+          <div class="stat-title">Pendientes</div>
+          <div class="stat-value">{{ pendingCount() }}</div>
+          <div class="stat-sub">por terminar</div>
+        </div>
+        <div class="stat-card progress">
+          <div class="stat-title">Progreso</div>
+          <div class="stat-value">{{ progressPercent() }}%</div>
+          <div class="stat-bar">
+            <div class="stat-bar-fill" [style.width.%]="progressPercent()"></div>
+          </div>
+        </div>
+        <div class="stat-card new">
+          <div class="stat-title">Nuevas hoy</div>
+          <div class="stat-value">{{ newTodayCount() }}</div>
+          <div class="stat-sub">creadas desde las 00:00</div>
+        </div>
+      </div>
       <a href="#" class="stats-link">Ver estadísticas completas</a>
     </div>
   </div>
   <div class="task-card task-card-today">
-    <h2>TAREAS DE HOY</h2>
-    <form (submit)="$event.preventDefault(); addTask()">
-      <input type="text" [value]="newTask()" (input)="newTask.set($event.target.value)" placeholder="Nueva tarea..." />
-      <button type="submit">Añadir</button>
-    </form>
-    <ul>
-      <li *ngFor="let task of tasks(); let i = index">
-        <input type="checkbox" [checked]="task.done" (change)="toggleDone(i)" />
-        <span [style.textDecoration]="task.done ? 'line-through' : 'none'">{{ task.title }}</span>
-  <button class="delete-btn" (click)="deleteTask(i)" aria-label="Eliminar tarea">×</button>
+    <div class="card-header">
+      <div class="title-row">
+        <h2>Tareas de hoy</h2>
+        <div class="today-pill">Hoy</div>
+      </div>
+      <div class="meta-row">
+        <div class="counters">
+          <span class="counter"><strong>Total:</strong> {{ todayTotalCount() }}</span>
+          <span class="counter done"><strong>Hechas:</strong> {{ todayDoneCount() }}</span>
+          <span class="counter pending"><strong>Por hacer:</strong> {{ todayPendingCount() }}</span>
+        </div>
+        <div class="filters">
+          <button type="button" class="chip" [class.active]="filter() === 'all'" (click)="setFilter('all')">Todas</button>
+          <button type="button" class="chip" [class.active]="filter() === 'pending'" (click)="setFilter('pending')">Pendientes</button>
+          <button type="button" class="chip" [class.active]="filter() === 'done'" (click)="setFilter('done')">Hechas</button>
+        </div>
+      </div>
+      <div class="tools-row">
+        <input class="search" type="search" [value]="search()" (input)="search.set($any($event.target).value)" placeholder="Buscar tarea..." />
+        <select class="sort" [value]="sort()" (change)="setSort($any($event.target).value)">
+          <option value="default">Orden original</option>
+          <option value="alpha">Alfabético</option>
+          <option value="status">Pendientes primero</option>
+          <option value="recent">Más recientes</option>
+        </select>
+      </div>
+      <div class="progress-bar" [attr.aria-valuenow]="todayProgressPercent()" aria-valuemin="0" aria-valuemax="100" role="progressbar">
+        <div class="progress-fill" [style.width.%]="todayProgressPercent()"></div>
+      </div>
+      <span class="progress-label">{{ todayProgressPercent() }}% completado</span>
+    </div>
+
+    <!-- Vista previa: sin creación de tareas aquí -->
+
+    <!-- Sin acciones masivas en vista previa -->
+
+    <div *ngIf="visibleTasks().length === 0" class="empty-state">
+      <div class="empty-illustration">🗒️</div>
+      <div class="empty-title">No hay tareas en esta vista</div>
+      <div class="empty-sub">Usa el buscador o el filtro, o crea una nueva tarea.</div>
+    </div>
+
+    <ul *ngIf="visibleTasks().length > 0">
+      <li *ngFor="let task of visibleTasks(); let i = index" [class.done]="task.done">
+        <label class="task-item">
+          <input type="checkbox" [checked]="task.done" (change)="toggleDoneTask(task)" />
+          <ng-container>
+            <span class="status-icon" *ngIf="statusIcon(task)" [title]="taskStatus(task)">{{ statusIcon(task) }}</span>
+            <span class="title">{{ task.title }}</span>
+            <span class="badges">
+              <span class="badge due" *ngIf="task.dueAt">⏰ {{ task.dueAt | date:'shortDate' }}</span>
+            </span>
+          </ng-container>
+        </label>
+        <!-- Sin acciones de edición/eliminación en vista previa -->
       </li>
     </ul>
   </div>

@@ -78,6 +78,14 @@
 								<span class="chip" *ngFor="let tag of parseTags(newTaskTags)">{{ tag }}</span>
 							</div>
 						</div>
+						<div class="col">
+							<label>Para el día <span class="req">*</span></label>
+							<input type="date" [(ngModel)]="newTaskPlannedFor" name="taskPlannedFor" [min]="todayStr" required>
+						</div>
+						<div class="col">
+							<label>Fecha límite <span class="req">*</span></label>
+							<input type="date" [(ngModel)]="newTaskDueDate" name="taskDueDate" [min]="newTaskPlannedFor || todayStr" required>
+						</div>
 					</div>
 				</div>
 				<div class="panel-actions">
@@ -121,6 +129,8 @@
 			<div class="meta">
 				<span class="priority" [class]="priorityClass(t.priority)">Prioridad: {{ t.priority || 'low' }}</span>
 				<span class="desc" *ngIf="t.description">{{ t.description }}</span>
+				<span class="badge planned" *ngIf="t.plannedFor">📅 {{ t.plannedFor }}</span>
+				<span class="badge due" *ngIf="t.dueAt">⏰ {{ t.dueAt | date:'shortDate' }}</span>
 				<span class="overtime" *ngIf="isOvertime(t)">Sobretiempo +{{ formatElapsed(overtimeMs(t)) }}</span>
 				<span class="subs-summary" *ngIf="subtaskCounts(t).total && compactMode">
 					{{ subtaskCounts(t).done }}/{{ subtaskCounts(t).total }}
