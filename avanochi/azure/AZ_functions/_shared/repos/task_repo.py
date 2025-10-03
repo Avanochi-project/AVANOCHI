@@ -9,6 +9,10 @@ class TaskRepository(BaseRepository):
     def entity_type(self) -> str:
         return "task"
 
+    # =========================================================
+    #                   Task Operations
+    # =========================================================
+
     def create_task(self, task: Task | dict):
         # Accepts Task entity or dict
         if isinstance(task, Task):
@@ -32,3 +36,36 @@ class TaskRepository(BaseRepository):
         task = self.get(task_id)
         task["completed"] = True
         return self.update(task)
+
+    # =========================================================
+    #                   SubTask Operations
+    # =========================================================
+
+    def get_subtasks(self, task_id: str, subtask_id: str):
+        task = self.get(task_id)
+        if not task:
+            raise ValueError("Task not found")
+        
+        subtasks = task.get("subtasks", [])
+        return subtasks
+
+    def add_subtask(self, task, subtask):
+        subtasks = task.get("subtasks", [])
+        subtasks.append(subtask)
+        task["subtasks"] = subtasks
+        return self.update(task)
+    
+    def complete_subtask(self, task_id: str, subtask_id: str):
+        task = self.get(task_id)
+        if not task:
+            raise ValueError("Task not found")
+        
+        subtasks = task.get("subtasks", [])
+        for subtask in subtasks:
+            if subtask["id"] == subtask_id:
+                subtask["completed"] = True
+                break
+
+        task["subtasks"] = subtasks
+        self.update(task)
+        return subtask
