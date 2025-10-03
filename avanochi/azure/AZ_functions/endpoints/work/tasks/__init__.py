@@ -1,18 +1,29 @@
 # work/tasks/__init__.py
 
+from .tasks import create_task, list_tasks, update_task_title, complete_task
+from .subtasks import add_subtask, complete_subtask, delete_subtask
+
+
 """
 HTTP-triggered Azure Function for basic task management (Phase 1).
 Provides:
- - POST /tasks        -> create a new task (requires title + user_id)
- - GET  /tasks        -> list tasks (optional ?user_id=...)
- - PATCH /tasks/{id}  -> partial update (used to mark as completed)
+
+    IDs ARE GIVEN AS PARAMS OR IN BODY (JSON), NEVER IN URL PATH.
+
+    - POST /tasks                      -> create a new task (requires title + user_id)
+    - GET  /tasks                      -> list tasks (optional ?user_id=...)
+    - PATCH /tasks/update_title        -> update a task's title
+    - PATCH /tasks                     -> partial update (used to mark as completed)
+
+    - POST /tasks/subtask/add          -> add a subtask to a task (requires title)
+    - PATCH /tasks/subtask/complete    -> mark a subtask as completed
+    - PATCH /tasks/subtask/delete      -> delete a subtask from a task
+
 """
 
 import json
-import logging
 import azure.functions as func
 
-from _shared.database import DatabaseError
 from _shared.services.service_factory import ServiceFactory
 
 # Initialize service once (through the factory)
@@ -29,89 +40,30 @@ def _json_response(payload, status_code=200):
     )
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
-    
-    # Entry point for the Azure Function.
-    # Supports GET, POST and PATCH (partial updates).
+    path = req.route_params.get("path") or req.params.get("path") or ""
+    method = req.method.upper()
 
-    logging.info(f"Tasks function invoked. Method={req.method}")
-
-    # AUTHENTICATION
-    if not auth_service.validate_token(req):
-        return _json_response({"error": "Unauthorized"}, 401)
-    
-    try:
-        if req.method == "POST":
-            # Create a new task
-            try:
-                data = req.get_json()
-            except ValueError:
-                return _json_response({"error": "Invalid JSON payload"}, 400)
-
-            title = (data.get("title") or "").strip()
-            duration = data.get("duration")
-            user_id = auth_service.validate_token(req)
-
-            try:
-                created = task_service.create_task(user_id, title, duration)
-                return _json_response(
-                {
-                    "task_id": created["id"]
-                }
-                , 201)
-            except ValueError as ve:
-                return _json_response({"error": str(ve)}, 400)
-            except DatabaseError as e:
-                logging.exception("Database error while creating task")
-                return _json_response({"error": str(e)}, 500)
-
-        elif req.method == "GET":
-            # List tasks, optionally filtered by user_id
-            user_id = auth_service.validate_token(req)
-            try:
-                items = task_service.list_tasks(user_id)
-                return _json_response(
-                {
-                    "tasks": items
-                }    
-                , 200)
-            except DatabaseError as e:
-                logging.exception("Database error while listing tasks")
-                return _json_response({"error": str(e)}, 500)
-
-        elif req.method == "PATCH":
-            # Partial update — used to mark a task as completed.
-            task_id = req.route_params.get("id") or req.params.get("id")
-            try:
-                # Parse JSON body
-                body = req.get_json()
-            except ValueError:
-                return _json_response({"error": "Invalid JSON body"}, 400)
-
-            task_id = body.get("task_id")
-            if not task_id:
-                return _json_response({"error": "Task id is required in body"}, 400)
-
-            try:
-                updated = task_service.complete_task(task_id)
-                return _json_response(
-                {
-                    "task_id": updated["id"],
-                    "task_title": updated["title"],
-                    "completed": updated["completed"]
-                }
-                , 200)
-            except DatabaseError as e:
-                msg = str(e)
-                logging.exception(f"Error completing task {task_id}")
-                if "not found" in msg.lower():
-                    return _json_response({"error": msg}, 404)
-                return _json_response({"error": msg}, 500)
-
+    if "subtask" in path:
+        # dispatch subtask endpoints
+        if method == "POST" and "add" in path:
+            return add_subtask(req, auth_service, task_service)
+        elif method == "PATCH" and "complete" in path:
+            return complete_subtask(req, auth_service, task_service)
+        elif method == "PATCH" and "delete" in path:
+            return delete_subtask(req, auth_service, task_service)
         else:
-            return _json_response({"error": f"Method {req.method} not allowed"}, 405)
+            return _json_response({"error": "Subtask endpoint not found"}, 404)
+    else:
+        # dispatch task endpoints
+        if method == "POST":
+            return create_task(req, auth_service, task_service)
+        elif method == "GET":
+            return list_tasks(req, auth_service, task_service)
+        elif method == "PATCH":
+            if "update_title" in path:
+                return update_task_title(req, auth_service, task_service)
+            else:
+                return complete_task(req, auth_service, task_service)
+        else:
+            return _json_response({"error": f"Method {method} not allowed"}, 405)
 
-    except Exception as e:
-        logging.exception("Unexpected error in tasks function")
-        return _json_response(
-            {"error": "Internal server error", "detail": str(e)}, 500
-        )
