@@ -23,6 +23,8 @@ export class TaskLog implements OnInit, OnDestroy {
     tags?: string[];
     priority?: 'low' | 'medium' | 'high';
     dueAt?: number; // epoch ms
+    plannedFor?: string; // 'YYYY-MM-DD' local date
+    completedAt?: string; // ISO when finished
     subtasks?: Array<{ id: string; text: string; done: boolean }>;
     notes?: string;
     openNotes?: boolean; // ui state
@@ -36,6 +38,7 @@ export class TaskLog implements OnInit, OnDestroy {
       startedAt: Date.now() - (7 * 60 + 18) * 1000, // 7m 18s
       accumulatedMs: 0,
       createdAt: Date.now(),
+  plannedFor: toLocalDateString(),
       description: 'Pantalla principal para registrar varias tareas con contador y progreso.',
       tags: ['UI', 'Frontend'],
       priority: 'high',
@@ -55,6 +58,7 @@ export class TaskLog implements OnInit, OnDestroy {
       startedAt: null,
       accumulatedMs: 0,
       createdAt: Date.now(),
+  plannedFor: toLocalDateString(),
       description: 'Definir pruebas de interacción para el componente de tareas.',
       tags: ['Testing'],
       priority: 'medium',
@@ -71,7 +75,8 @@ export class TaskLog implements OnInit, OnDestroy {
       expectedDurationMs: 30 * 60 * 1000,
       startedAt: null,
       accumulatedMs: 12 * 60 * 1000, // 12m ya invertidos
-      createdAt: (() => { const now = Date.now(); const startToday = startOfDayTs(now); return startToday - 12 * 60 * 60 * 1000; })(),
+  createdAt: (() => { const now = Date.now(); const startToday = startOfDayTs(now); return startToday - 12 * 60 * 60 * 1000; })(),
+  plannedFor: toLocalDateString(new Date(startOfDayTs(Date.now()) - 24*60*60*1000)),
       description: 'Ajustar gradientes y transiciones para mayor claridad visual.',
       tags: ['UI', 'CSS'],
       priority: 'low',
@@ -87,7 +92,8 @@ export class TaskLog implements OnInit, OnDestroy {
       startedAt: null,
       accumulatedMs: 20 * 60 * 1000,
       done: true,
-      createdAt: (() => { const now = Date.now(); const startToday = startOfDayTs(now); return startToday - 10 * 60 * 60 * 1000; })(),
+  createdAt: (() => { const now = Date.now(); const startToday = startOfDayTs(now); return startToday - 10 * 60 * 60 * 1000; })(),
+  plannedFor: toLocalDateString(new Date(startOfDayTs(Date.now()) - 24*60*60*1000)),
       description: 'Sección en README con razones de arquitectura y UX.',
       tags: ['Docs'],
       priority: 'medium',
@@ -103,7 +109,8 @@ export class TaskLog implements OnInit, OnDestroy {
       expectedDurationMs: 60 * 60 * 1000,
       startedAt: null,
       accumulatedMs: 0,
-      createdAt: (() => { const now = Date.now(); const startWeek = startOfWeekMondayTs(now); return startWeek + 1 * 24 * 60 * 60 * 1000; })(), // martes
+  createdAt: (() => { const now = Date.now(); const startWeek = startOfWeekMondayTs(now); return startWeek + 1 * 24 * 60 * 60 * 1000; })(), // martes
+  plannedFor: toLocalDateString(new Date(startOfWeekMondayTs(Date.now()) + 1 * 24*60*60*1000)),
       description: 'Pasar checklist de contraste, focus y labels.',
       tags: ['A11Y', 'QA'],
       priority: 'high',
@@ -119,7 +126,8 @@ export class TaskLog implements OnInit, OnDestroy {
       expectedDurationMs: 45 * 60 * 1000,
       startedAt: null,
       accumulatedMs: 8 * 60 * 1000,
-      createdAt: (() => { const now = Date.now(); const startWeek = startOfWeekMondayTs(now); return startWeek + 2 * 24 * 60 * 60 * 1000; })(), // miércoles
+  createdAt: (() => { const now = Date.now(); const startWeek = startOfWeekMondayTs(now); return startWeek + 2 * 24 * 60 * 60 * 1000; })(), // miércoles
+  plannedFor: toLocalDateString(new Date(startOfWeekMondayTs(Date.now()) + 2 * 24*60*60*1000)),
       description: 'Recopilar feedback y priorizar tareas de la semana siguiente.',
       tags: ['Planning'],
       priority: 'low',
@@ -136,6 +144,9 @@ export class TaskLog implements OnInit, OnDestroy {
   newTaskDescription = '';
   newTaskPriority: 'low' | 'medium' | 'high' = 'medium';
   newTaskTags = '';
+  todayStr: string = toLocalDateString();
+  newTaskPlannedFor: string = toLocalDateString();
+  newTaskDueDate: string = '';
   showNewTask = false;
 
   // A ticking signal that triggers change detection in zoneless mode
@@ -154,6 +165,19 @@ export class TaskLog implements OnInit, OnDestroy {
   private dragOverIndex: number | null = null;
 
   ngOnInit(): void {
+    // Load from localStorage if present
+    try {
+      const raw = localStorage.getItem('tasklog.tasks');
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          this.tasks = arr;
+        }
+      } else {
+        // seed initial tasks into storage
+        this.saveToStorage();
+      }
+    } catch {}
     this.timerId = setInterval(() => {
       this.nowMs.set(Date.now());
     }, 250);
@@ -172,6 +196,9 @@ export class TaskLog implements OnInit, OnDestroy {
       .split(',')
       .map(t => t.trim())
       .filter(Boolean);
+    const plannedFor = (this.newTaskPlannedFor || '').trim() || toLocalDateString();
+    const dueDate = (this.newTaskDueDate || '').trim();
+    const dueAt = dueDate ? new Date(dueDate + 'T00:00:00').getTime() : undefined;
     this.tasks.unshift({
       id: cryptoRandomId(),
       name,
@@ -179,17 +206,22 @@ export class TaskLog implements OnInit, OnDestroy {
       startedAt: null,
       accumulatedMs: 0,
       createdAt: Date.now(),
+      plannedFor,
       description: (this.newTaskDescription || '').trim(),
       tags,
       priority: this.newTaskPriority,
+      dueAt,
       subtasks: [],
       notes: '',
     });
+    this.saveToStorage();
     this.newTaskName = '';
     this.newTaskMinutes = 25;
     this.newTaskDescription = '';
     this.newTaskPriority = 'medium';
     this.newTaskTags = '';
+    this.newTaskPlannedFor = toLocalDateString();
+    this.newTaskDueDate = '';
     this.showNewTask = false; // collapse after adding
   }
 
@@ -198,6 +230,7 @@ export class TaskLog implements OnInit, OnDestroy {
     if (t.startedAt == null) {
       t.startedAt = Date.now();
     }
+    this.saveToStorage();
   }
 
   pauseTask(t: any): void {
@@ -205,6 +238,7 @@ export class TaskLog implements OnInit, OnDestroy {
       t.accumulatedMs += Date.now() - t.startedAt;
       t.startedAt = null;
     }
+    this.saveToStorage();
   }
 
   finishTask(t: any): void {
@@ -212,11 +246,14 @@ export class TaskLog implements OnInit, OnDestroy {
       this.pauseTask(t);
     }
     t.done = true;
+    t.completedAt = new Date().toISOString();
+    this.saveToStorage();
   }
 
   updateExpected(t: any, minutes: number): void {
     const mins = Math.max(1, Math.min(24 * 60, Math.floor(minutes || 0)));
     t.expectedDurationMs = mins * 60 * 1000;
+    this.saveToStorage();
   }
 
   // Delete
@@ -224,6 +261,7 @@ export class TaskLog implements OnInit, OnDestroy {
     const id = t.id;
     const idx = this.tasks.findIndex(x => x.id === id);
     if (idx >= 0) this.tasks.splice(idx, 1);
+    this.saveToStorage();
   }
 
   // Metrics
@@ -284,13 +322,13 @@ export class TaskLog implements OnInit, OnDestroy {
 
   let list: typeof this.tasks = [];
     if (this.currentView === 'yesterday') {
-      // Ayer: todas las tareas creadas ayer, hechas o no
-      list = this.tasks.filter(t => t.createdAt >= startYesterday && t.createdAt < startToday);
+      // Ayer: por fecha planificada
+      list = this.tasks.filter(t => t.plannedFor && dateStrToRange(t.plannedFor).start >= startYesterday && dateStrToRange(t.plannedFor).start < startToday);
     } else if (this.currentView === 'today') {
-      list = this.tasks.filter(t => t.createdAt >= startToday && t.createdAt < endToday);
+      list = this.tasks.filter(t => t.plannedFor && dateStrToRange(t.plannedFor).start >= startToday && dateStrToRange(t.plannedFor).start < endToday);
     } else {
-      // Semana: tareas de la semana actual excluyendo las de hoy
-      list = this.tasks.filter(t => t.createdAt >= startWeek && t.createdAt < endWeek && !(t.createdAt >= startToday && t.createdAt < endToday));
+      // Semana: por plan (excluye hoy)
+      list = this.tasks.filter(t => t.plannedFor && dateStrToRange(t.plannedFor).start >= startWeek && dateStrToRange(t.plannedFor).start < endWeek && !(dateStrToRange(t.plannedFor).start >= startToday && dateStrToRange(t.plannedFor).start < endToday));
     }
 
     // Text search
@@ -348,9 +386,9 @@ export class TaskLog implements OnInit, OnDestroy {
     const endToday = startToday + 24 * 60 * 60 * 1000;
     const endWeek = startWeek + 7 * 24 * 60 * 60 * 1000;
 
-    const yesterday = this.tasks.filter(t => t.createdAt >= startYesterday && t.createdAt < startToday).length;
-    const today = this.tasks.filter(t => t.createdAt >= startToday && t.createdAt < endToday).length;
-    const week = this.tasks.filter(t => t.createdAt >= startWeek && t.createdAt < endWeek && !(t.createdAt >= startToday && t.createdAt < endToday)).length;
+    const yesterday = this.tasks.filter(t => t.plannedFor && dateStrToRange(t.plannedFor).start >= startYesterday && dateStrToRange(t.plannedFor).start < startToday).length;
+    const today = this.tasks.filter(t => t.plannedFor && dateStrToRange(t.plannedFor).start >= startToday && dateStrToRange(t.plannedFor).start < endToday).length;
+    const week = this.tasks.filter(t => t.plannedFor && dateStrToRange(t.plannedFor).start >= startWeek && dateStrToRange(t.plannedFor).start < endWeek && !(dateStrToRange(t.plannedFor).start >= startToday && dateStrToRange(t.plannedFor).start < endToday)).length;
 
     return { yesterday, today, week };
   }
@@ -362,15 +400,18 @@ export class TaskLog implements OnInit, OnDestroy {
     t.subtasks = t.subtasks || [];
     t.subtasks.push({ id: cryptoRandomId(), text, done: false });
     t.newSubtaskText = '';
+    this.saveToStorage();
   }
 
   toggleSubtask(t: any, s: any): void {
     s.done = !s.done;
+    this.saveToStorage();
   }
 
   removeSubtask(t: any, s: any): void {
     const idx = (t.subtasks || []).findIndex((x: any) => x.id === s.id);
     if (idx >= 0) t.subtasks.splice(idx, 1);
+    this.saveToStorage();
   }
 
   subtaskCounts(t: any) {
@@ -397,6 +438,7 @@ export class TaskLog implements OnInit, OnDestroy {
       notes: t.notes || '',
     };
     this.tasks.unshift(clone as any);
+    this.saveToStorage();
   }
 
   // Drag & Drop handlers for subtasks
@@ -429,6 +471,12 @@ export class TaskLog implements OnInit, OnDestroy {
   }
   onSubtaskDragEnd(_ev: DragEvent) { this.clearDrag(); }
   private clearDrag() { this.dragTaskId = null; this.dragFromIndex = null; this.dragOverIndex = null; }
+
+  private saveToStorage() {
+    try {
+      localStorage.setItem('tasklog.tasks', JSON.stringify(this.tasks));
+    } catch {}
+  }
 
   // Helper for tag chips preview in create form
   parseTags(text: string): string[] {
@@ -469,4 +517,18 @@ function startOfWeekMondayTs(ts: number): number {
   const diffToMonday = (day === 0 ? -6 : 1 - day); // move back to Monday
   d.setDate(d.getDate() + diffToMonday);
   return d.getTime();
+}
+
+// Local date helpers
+function toLocalDateString(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function dateStrToRange(dateStr: string): { start: number; end: number } {
+  const d = new Date(dateStr + 'T00:00:00');
+  const start = d.getTime();
+  const end = start + 24 * 60 * 60 * 1000;
+  return { start, end };
 }
