@@ -1,5 +1,5 @@
 # main.py
-import os
+import os, time
 from src.database import load_endpoint_groups
 from src.uix import select_endpoint_group, select_endpoint, fill_endpoint_body, clear_screen, print_API_response
 from src.http_client import HttpClient
@@ -79,6 +79,8 @@ def main():
                 response = client.put(url, json=body)
             elif method == "DELETE":
                 response = client.delete(url, json=body)
+            elif method == "PATCH":
+                response = client.patch(url, json=body)
             else:
                 print(f"Unsupported HTTP method: {method}")
                 continue
@@ -86,6 +88,7 @@ def main():
             # Try to display JSON response, fallback to text
             try:
                 response_data = response.json()
+                time.sleep(2)
                 print_API_response(selected_endpoint, response_data)
             except Exception:
                 print("\nRaw response:")

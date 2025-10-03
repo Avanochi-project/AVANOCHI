@@ -42,13 +42,12 @@
         "routes": {
             "get_stats": {
                 "description": "Get user statistics",
-                "url": "http://localhost:7071/api/stats/{user_id}",
+                "url": "http://localhost:7071/api/stats/",
                 "method": "GET",
-                "params": {
-                    "user_id": "string"
-                },
+                "params": {},
                 "response": {
                     "user_id": "string",
+                    "username": "string",
                     "hours_worked": "number",
                     "tasks_completed": "number"
                 }
@@ -74,22 +73,21 @@
                 "description": "Get all tasks for a user",
                 "url": "http://localhost:7071/api/tasks",
                 "method": "GET",
-                "params": {
-                    "user_id": "string"
-                },
+                "params": {},
                 "response": {
                     "tasks": "array of task objects"
                 }
             },
             "complete_task": {
                 "description": "Mark a task as completed",
-                "url": "http://localhost:7071/api/tasks/",
+                "url": "http://localhost:7071/api/tasks",
                 "method": "PATCH",
                 "params": {
                     "task_id": "string"
                 },
                 "response": {
                     "task_id": "string",
+                    "task_title": "string",
                     "completed": "string"
                 }
             }
@@ -100,7 +98,7 @@
         "routes": {
             "start_session": {
                 "description": "Start a new work session",
-                "url": "http://localhost:7071/api/work_session/start",
+                "url": "http://localhost:7071/api/work_sessions/start",
                 "method": "POST",
                 "params": {},
                 "response": {
@@ -110,7 +108,7 @@
             },
             "end_session": {
                 "description": "End the selected work session",
-                "url": "http://localhost:7071/api/work_session/end",
+                "url": "http://localhost:7071/api/work_sessions/end",
                 "method": "POST",
                 "params": {
                     "session_id": "string"
@@ -118,7 +116,7 @@
             },
             "get_session": {
                 "description": "Get the active work session for a user",
-                "url": "http://localhost:7071/api/work_session/active",
+                "url": "http://localhost:7071/api/work_sessions/active",
                 "method": "GET",
                 "params": {},
                 "response": {

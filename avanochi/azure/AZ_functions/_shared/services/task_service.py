@@ -15,7 +15,7 @@ class TaskService(BaseService):
     def get_entity_type(self) -> str:
         return "Task"
 
-    def create_task(self, user_id: str, title: str) -> dict:
+    def create_task(self, user_id: str, title: str, duration) -> dict:
         if not title or title.strip() == "":
             raise ValueError("Task title cannot be empty")
         if not user_id:
@@ -24,6 +24,7 @@ class TaskService(BaseService):
         task = Task(title)
         task_dict = task.to_dict()
         task_dict["user_id"] = user_id
+        task_dict["duration"] = duration
         return self.repo.create_task(task_dict)
 
     def list_tasks(self, user_id: str = None) -> list:

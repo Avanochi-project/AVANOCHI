@@ -37,13 +37,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         return _json_response({"error": "Unauthorized"}, 401)
     
     try:
-        route = req.route_params.get("id") or ""
-        action = req.route_params.get("action") or ""
+        route = req.route_params.get("route") or ""
 
         # --- Start session ---
         if req.method == "POST" and route == "start":
 
-            user_id = auth_service.get_id_from_request(req)
+            user_id = auth_service.validate_token(req)
             if not user_id:
                 return _json_response({"error": "Field 'user_id' is required"}, 400)
 
@@ -89,7 +88,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         # --- Get active session ---
         elif req.method == "GET" and route == "active":
-            user_id = auth_service.get_id_from_request(req)
+            user_id = auth_service.validate_token(req)
             if not user_id:
                 return _json_response({"error": "Query parameter 'user_id' is required"}, 400)
 

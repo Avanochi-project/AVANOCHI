@@ -3,15 +3,20 @@
 from _shared.repos.base_repo import BaseRepository
 from _shared.entities import WorkSession
 
-
 class WorkSessionRepository(BaseRepository):
     # Repository for managing WorkSession entities in Cosmos DB
 
     def entity_type(self) -> str:
         return "work_session"
 
-    def start_session(self, session: WorkSession):
-        return self.create(session.to_dict())
+    def start_session(self, session: WorkSession | dict):
+        # Accepts WorkSession entity or dict
+            if isinstance(session, WorkSession):
+                session_dict = session.to_dict()
+                session_dict["type"] = self.entity_type()
+                return self.create(session_dict)
+            session["type"] = self.entity_type()
+            return self.create(session)
 
     def end_session(self, session_id: str):
         session = self.get(session_id)

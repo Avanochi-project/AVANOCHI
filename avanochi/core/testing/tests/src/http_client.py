@@ -59,3 +59,7 @@ class HttpClient:
     def delete(self, url: str, headers: Optional[Dict[str, str]] = None,
                json: Optional[Dict[str, Any]] = None) -> requests.Response:
         return self._request("DELETE", url, headers=headers, json=json)
+
+    def patch(self, url: str, headers: Optional[Dict[str, str]] = None,
+            json: Optional[Dict[str, Any]] = None) -> requests.Response:
+        return self._request("PATCH", url, headers=headers, json=json)
